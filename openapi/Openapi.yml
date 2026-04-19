@@ -1,23 +1,27 @@
 openapi: 3.1.0
 info:
   version: 1.0.0
-  title: fédération et collectivité agricole
+  title: federation et collectivite agricole
   description: digitalisation dans le domaine agricole
+
 servers:
-  - url: http://localhost/8080
+  - url: http://localhost:8080
 
 paths:
-  '/collectivite':
+  /collectivite:
     post:
-      summary: création d'une colléctivité agricole
+      summary: creation d'une collectivite agricole
       requestBody:
         required: true
         content:
           application/json:
             schema:
-             $ref: '#/components/schemas/CollectiviteAgricole'
-
-
+              $ref: '#/components/schemas/CollectiviteAgricole'
+      responses:
+        '201':
+          description: Collectivite creee avec succes
+        '400':
+          description: parametre invalide
 
 components:
   schemas:
@@ -25,68 +29,61 @@ components:
       type: object
       properties:
         id:
-          type: intteger
-        nomNrenom:
+          type: integer
+        nomPrenom:
           type: string
         dateNaissance:
-          type: date-time
+          type: string
+          format: date-time
         adress:
           type: string
-        métier-exercer:
+        metierExerce:
           type: string
         telephone:
           type: string
         adressEmail:
           type: string
-        dateAdhésion:
-          type: date-time
+        dateAdhesion:
+          type: string
+          format: date-time
         poste:
           type: string
           enum:
             - président
-            - président adjoin
+            - président adjoint
             - trésorier
             - secrétaire
             - membre confirmé
             - membre junior
-      examples:
-        exemplePresident:
-          summary: Exemple d’un président
-          value:
-            id: 1
-            nomPrenom: "Rakoto Jean"
-            dateNaissance: "1980-03-15"
-            adresse: "Lot II 45B, Antananarivo"
-            metierExerce: "Agriculteur rizicole"
-            telephone: "+261341234567"
-            adresseEmail: "rakoto.jean@example.com"
-            dateAdhesion: "2023-06-01"
-            poste: "president"
 
     CollectiviteAgricole:
       type: object
       properties:
         id:
           type: integer
-
         nom:
           type: string
-
         specialite:
           type: string
-
         date_creation:
           type: string
           format: date-time
-
         membres:
           type: array
           items:
-      examples:
-        exempleCollectivité:
-          id: 3
-          nom: "Coopérative Rizicole d'Ambatondrazaka"
-          specialite: "Culture du riz"
-          date_creation: "2015-03-10T00:00:00Z"
-          membres:
             $ref: '#/components/schemas/membre'
+      example:
+        id: 3
+        nom: "Cooperative Rizicole d'Ambatondrazaka"
+        specialite: "Culture du riz"
+        date_creation: "2015-03-10T00:00:00Z"
+        membres:
+          - id: 1
+            nomPrenom: "Rakoto Jean"
+            dateNaissance: "1980-03-15T00:00:00Z"
+            adress: "Antananarivo"
+            metierExerce: "Agriculteur"
+            telephone: "+261341234567"
+            adressEmail: "rakoto.jean@example.com"
+            dateAdhesion: "2023-06-01T00:00:00Z"
+            poste: "président"
