@@ -15,20 +15,8 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                id:
-                  type: int
-                nom:
-                  type: string
-                specialité:
-                  type: strinig
-                date-creation:
-                  type: date-time
-                membres:
-                  type: array
-                items:
-                  $ref: '#/components/schemas/membre'
+             $ref: '#/components/schemas/CollectiviteAgricole'
+
 
 
 components:
@@ -37,7 +25,7 @@ components:
       type: object
       properties:
         id:
-          type: int
+          type: intteger
         nomNrenom:
           type: string
         dateNaissance:
@@ -75,6 +63,30 @@ components:
             dateAdhesion: "2023-06-01"
             poste: "president"
 
-    schemaCollectivité:
+    CollectiviteAgricole:
       type: object
       properties:
+        id:
+          type: integer
+
+        nom:
+          type: string
+
+        specialite:
+          type: string
+
+        date_creation:
+          type: string
+          format: date-time
+
+        membres:
+          type: array
+          items:
+      examples:
+        exempleCollectivité:
+          id: 3
+          nom: "Coopérative Rizicole d'Ambatondrazaka"
+          specialite: "Culture du riz"
+          date_creation: "2015-03-10T00:00:00Z"
+          membres:
+            $ref: '#/components/schemas/membre'
