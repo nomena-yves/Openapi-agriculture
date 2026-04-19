@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: fédération et collectivité agricole
+  description: digitalisation dans le domaine agricole
+servers:
+  - url: http://localhost/8080
+
+paths:
+  '/collectivite':
+    post:
+      summary: création d'une colléctivité agricole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: int
+                nom:
+                  type: string
+                specialité:
+                  type: strinig
+                date-creation:
+                  type: date-time
+                membres:
+                  type: array
+                items:
+                  $ref: '#/components/schemas/membre'
+
+
+components:
+  schemas:
+    membre:
+      type: object
+      properties:
+        id:
+          type: int
+        nomNrenom:
+          type: string
+        dateNaissance:
+          type: date-time
+        adress:
+          type: string
+        métier-exercer:
+          type: string
+        telephone:
+          type: string
+        adressEmail:
+          type: string
+        dateAdhésion:
+          type: date-time
+        poste:
+          type: string
+          enum:
+            - président
+            - président adjoin
+            - trésorier
+            - secrétaire
+            - membre confirmé
+            - membre junior
+      examples:
+        exemplePresident:
+          summary: Exemple d’un président
+          value:
+            id: 1
+            nomPrenom: "Rakoto Jean"
+            dateNaissance: "1980-03-15"
+            adresse: "Lot II 45B, Antananarivo"
+            metierExerce: "Agriculteur rizicole"
+            telephone: "+261341234567"
+            adresseEmail: "rakoto.jean@example.com"
+            dateAdhesion: "2023-06-01"
+            poste: "president"
+
+    schemaCollectivité:
+      type: object
+      properties:
