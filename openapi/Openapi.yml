@@ -65,18 +65,22 @@ components:
           type: string
         specialite:
           type: string
-        date_creation:
+        dateCreation:
           type: string
           format: date-time
         membres:
           type: array
           items:
             $ref: '#/components/schemas/membre'
+        ville:
+          type: string
+        autorisation:
+          type: boolean
       example:
         id: 3
         nom: "Cooperative Rizicole d'Ambatondrazaka"
         specialite: "Culture du riz"
-        date_creation: "2015-03-10T00:00:00Z"
+        dateCreation: "2015-03-10T00:00:00Z"
         membres:
           - id: 1
             nomPrenom: "Rakoto Jean"
@@ -87,3 +91,5 @@ components:
             adressEmail: "rakoto.jean@example.com"
             dateAdhesion: "2023-06-01T00:00:00Z"
             poste: "président"
+        ville: "Antananarivo"
+        autorisation: true
