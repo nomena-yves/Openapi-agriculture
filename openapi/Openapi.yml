@@ -59,6 +59,36 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CollectiviteTresorerie'
+      responses:
+        '200':
+          description: votrdfjsfjsd
+        '400':
+          description: fdmqljmlfjmlfdjsmklfsdjqkmlfjdsmklfsd
+  /activites:
+    get:
+      summary: Liste des activités
+      description: Récupère toutes les activités planifiées (collectivité et fédération).
+      responses:
+        '200':
+          description: Liste des activités
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activite'
+    post:
+      summary: Créer une nouvelle activité
+      description: Permet d’ajouter une activité (obligatoire, exceptionnelle ou fédérale).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activite'
+      responses:
+          '201':
+            description: Activité créée avec succès
 
 
 
@@ -314,3 +344,49 @@ components:
                   solde: 750000
                   devise: MGA
                   dateSituation: "2026-04-20"
+
+    Activite:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifiant unique de l’activité
+        titre:
+          type: string
+          description: Nom ou thème de l’activité
+        typeActivite:
+          type: string
+          enum: [Obligatoire, Exceptionnelle, Federation]
+          description: Type de l’activité
+        description:
+          type: string
+          description: Détails de l’activité
+          date:
+            type: string
+            format: date
+            description: Date prévue de l’activité
+          recurrence:
+            type: string
+            description:
+              Règle de récurrence (ex: deuxième dimanche du mois)
+          publicCible:
+            type: string
+            enum: [ Tous, Juniors, Collectivites ]
+            description: Membres concernés par l’activité
+          obligatoire:
+              type: boolean
+              description: Indique si la présence est obligatoire
+          required:
+              - titre
+              - typeActivite
+              - date
+              - obligatoire
+      example:
+        id: 1
+        titre: "Assemblée générale mensuelle"
+        typeActivite: Obligatoire
+        description: "Réunion mensuelle de tous les membres"
+        date: "2026-05-10"
+        recurrence: "Deuxième dimanche de chaque mois"
+        publicCible: Tous
+        obligatoire: true
