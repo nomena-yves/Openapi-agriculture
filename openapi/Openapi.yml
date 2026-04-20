@@ -65,18 +65,6 @@ paths:
         '400':
           description: fdmqljmlfjmlfdjsmklfsdjqkmlfjdsmklfsd
   /activites:
-    get:
-      summary: Liste des activités
-      description: Récupère toutes les activités planifiées (collectivité et fédération).
-      responses:
-        '200':
-          description: Liste des activités
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Activite'
     post:
       summary: Créer une nouvelle activité
       description: Permet d’ajouter une activité (obligatoire, exceptionnelle ou fédérale).
@@ -448,3 +436,71 @@ components:
         collectivitéOrigine: 101
         collectivitéInvitee: null
         comptabiliseAssiduite: true
+
+    StatistiquesCollectivite:
+      type: object
+      properties:
+        collectiviteId:
+          type: integer
+          description: Identifiant de la collectivité
+        moisRapport:
+          type: string
+          format: date
+          description: Mois concerné par le rapport
+        tauxAssiduiteGlobal:
+          type: number
+          format: float
+          description: Taux d’assiduité global de la collectivité (%)
+        nombreMembresActifs:
+          type: integer
+          description: Nombre de membres actifs (non démissionnaires)
+        membresStatistiques:
+              type: array
+              items:
+                $ref: '#/components/schemas/StatistiquesMembre'
+      required:
+        - collectiviteId
+        - moisRapport
+        - tauxAssiduiteGlobal
+        - nombreMembresActifs
+
+    StatistiquesMembre:
+        type: object
+        properties:
+          membreId:
+            type: integer
+            description: Identifiant du membre
+          nomPrenoms:
+            type: string
+          tauxAssiduite:
+            tauxAssiduite:
+              type: number
+              format: float
+              description: Taux d’assiduité du membre sur la période (%)
+              montantEncaisse:
+                type: number
+                description: Montant total versé par le membre sur la période
+              montantImpayes:
+                type: number
+                description: Montant des cotisations non réglées sur la période
+              required:
+                - membreId
+                - tauxAssiduite
+                - montantEncaisse
+                - montantImpayes
+
+        collectiviteId: 101
+        moisRapport: "2026-04-01"
+        tauxAssiduiteGlobal: 82.5
+        nombreMembresActifs: 120
+        membresStatistiques:
+          - membreId: 45
+            nomPrenoms: "Rakoto Jean"
+            tauxAssiduite: 90.0
+            montantEncaisse: 20000
+            montantImpayes: 0
+          - membreId: 46
+            nomPrenoms: "Rasoa Marie"
+            tauxAssiduite: 70.0
+            montantEncaisse: 15000
+            montantImpayes: 5000
