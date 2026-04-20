@@ -89,6 +89,24 @@ paths:
       responses:
           '201':
             description: Activité créée avec succès
+          '400':
+            description: il y a une erreur de syntaxe sur la creation
+
+  /presences:
+    post:
+      summary: Enregistrer la présence des membres
+      description: Permet au secrétaire de saisir la présence des membres lors d’une activité.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Presence'
+      responses:
+        '201':
+          description: Présence enregistrée avec succès
+        '400':
+          description: Erreur de validation
 
 
 
@@ -390,3 +408,43 @@ components:
         recurrence: "Deuxième dimanche de chaque mois"
         publicCible: Tous
         obligatoire: true
+
+    Presence:
+      type: object
+      properties:
+        activiteId:
+          type: integer
+          description: Identifiant de l’activité concernée
+        membreId:
+          type: integer
+          description: Identifiant du membre
+        statutPresence:
+          type: string
+          enum: [ Present, Absent, Excuse ]
+          description: Statut de présence du membre
+        motifAbsence:
+            type: string
+            description: Motif d’absence (si Excuse)
+        collectivitéOrigine:
+            type: integer
+            description: Identifiant de la collectivité d’origine du membre
+        collectivitéInvitee:
+              type: integer
+              description: Identifiant de la collectivité où le membre assiste (si invité)
+        comptabiliseAssiduite:
+              type: boolean
+              description: Indique si la présence compte dans le taux d’assiduité annuel
+      required:
+        - activiteId
+        - membreId
+        - statutPresence
+        - collectivitéOrigine
+        - comptabiliseAssiduite
+      example:
+        activiteId: 10
+        membreId: 45
+        statutPresence: Excuse
+        motifAbsence: "Maladie"
+        collectivitéOrigine: 101
+        collectivitéInvitee: null
+        comptabiliseAssiduite: true
