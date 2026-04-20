@@ -49,7 +49,17 @@ paths:
         '200':
           description: vous avez fait une cotisation pour la collectivité
         '404':
-          description: votre cotisation a été un echeque
+          description: votre cotisation a été une echeque
+
+  /tresorier:
+    post:
+      summary: la situation tresorier d' un collectivité
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectiviteTresorerie'
+
 
 
 components:
@@ -226,3 +236,81 @@ components:
         modePaiement: MobileMoney
         traceTresorier: "Reçu n°12345 - Avril"
 
+    Compte:
+      type: object
+      properties:
+        typeCompte:
+          type: string
+          enum: [ Caisse, Bancaire, MobileMoney ]
+          description: Type de compte
+        titulaire:
+          type: string
+          description: Nom du titulaire du compte
+        banque:
+          type: string
+          enum: [ BRED, MCB, BMOI, BOA, BGFI, AFG, ACCESBANQUE, BAOBAB, SIPEM]
+          description: Nom de la banque (si type = Bancaire)
+        numeroCompte:
+              type: string
+              pattern: '^[0-9]{23}$'
+              description: Numéro de compte bancaire (23 chiffres)
+        serviceMobileMoney:
+              type: string
+              enum: [ OrangeMoney, Mvola, AirtelMoney ]
+              description: Service mobile money (si type = MobileMoney)
+        telephone:
+              type: string
+              description: Numéro de téléphone associé (si type = MobileMoney)
+        solde:
+              type: number
+              description: Solde du compte
+              example: 1500000
+        devise:
+          type: string
+          default: MGA
+        dateSituation:
+              type: string
+              format: date
+              description: Date de la situation de trésorerie
+      required:
+            - typeCompte
+            - titulaire
+            - solde
+            - devise
+            - dateSituation
+
+    CollectiviteTresorerie:
+            type: object
+            properties:
+                collectiviteId:
+                  type: integer
+                  description: Identifiant de la collectivité
+                comptes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Compte'
+            required:
+                - collectiviteId
+                - comptes
+            example:
+              collectiviteId: 101
+              comptes:
+                - typeCompte: Caisse
+                  titulaire: "Trésorier Collectivité Antananarivo"
+                  solde: 500000
+                  devise: MGA
+                  dateSituation: "2026-04-20"
+                - typeCompte: Bancaire
+                  titulaire: "Collectivité Antananarivo"
+                  banque: BOA
+                  numeroCompte: "12345012345012345678901"
+                  solde: 2000000
+                  devise: MGA
+                  dateSituation: "2026-04-20"
+                - typeCompte: MobileMoney
+                  titulaire: "Collectivité Antananarivo"
+                  serviceMobileMoney: Mvola
+                  telephone: "+261341234567"
+                  solde: 750000
+                  devise: MGA
+                  dateSituation: "2026-04-20"
