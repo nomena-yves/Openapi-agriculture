@@ -23,6 +23,16 @@ paths:
         '400':
           description: parametre invalide
 
+  /admission:
+    post:
+      summary: ajouter un membre dans la collectivité
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouveauMembre'
+
+
 components:
   schemas:
     membre:
@@ -93,3 +103,62 @@ components:
             poste: "président"
         ville: "Antananarivo"
         autorisation: true
+
+    NouveauMembre:
+      type: object
+      properties:
+        parrainId:
+          type: integer
+          description: ID du membre parrain (ancienneté > 90 jours)
+        nomPrenoms:
+          type: string
+        dateNaissance:
+          type: string
+          format: date
+        genre:
+          type: string
+          enum: [ Homme, Femme, Autre ]
+        adresse:
+          type: string
+        metierExerce:
+            type: string
+        telephone:
+            type: string
+        email:
+            type: string
+            format: email
+        paiement:
+            type: object
+        properties:
+            montant:
+              type: number
+              example: 50000
+              devise:
+                devise:
+                  type: string
+                  example: MGA
+                  mode:
+                    type: string
+                    enum: [ MobileMoney, VirementBancaire ]
+                  required:
+                    - parrainId
+                    - nomPrenoms
+                    - dateNaissance
+                    - genre
+                    - adresse
+                    - metierExerce
+                    - telephone
+                    - email
+      example:
+            parrainId: 12
+            nomPrenoms: "Rakoto Jean"
+            dateNaissance: "1985-06-15"
+            genre: "Homme"
+            adresse: "Antananarivo, Madagascar"
+            metierExerce: "Agriculteur"
+            telephone: "+261341234567"
+            email: "rakoto.jean@example.com"
+            paiement:
+              montant: 5000
+              devise: "Ar"
+              mode: "MobileMoney"
