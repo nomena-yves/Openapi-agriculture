@@ -31,6 +31,25 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NouveauMembre'
+      responses:
+        '200':
+          description: le nouveau membre a été ajouter dans la collectivité
+        '404':
+          description: votre requete n a pas ete aboutis
+
+  /cotisation:
+    post:
+      summary: faire une cotisation pour la collectivité
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cotisation'
+      responses:
+        '200':
+          description: vous avez fait une cotisation pour la collectivité
+        '404':
+          description: votre cotisation a été un echeque
 
 
 components:
@@ -162,3 +181,48 @@ components:
               montant: 5000
               devise: "Ar"
               mode: "MobileMoney"
+
+
+    Cotisation:
+      type: object
+      properties:
+        membreId:
+          type: integer
+          description: ID du membre qui verse la cotisation
+        typeCotisation:
+          type: string
+          enum: [ Mensuelle, Annuelle, Ponctuelle ]
+          description: Nature de la cotisation
+        montant:
+          type: number
+          example: 20000
+        devise:
+          type: string
+          example: Ar
+        dateEncaissement:
+          type: string
+          format: date
+          description: Date de l’encaissement
+        modePaiement:
+          type: string
+          enum: [ Espece, VirementBancaire, MobileMoney ]
+        traceTresorier:
+          type: string
+          description: Référence ou note du trésorier
+      required:
+        - membreId
+        - typeCotisation
+        - montant
+        - devise
+        - dateEncaissement
+        - modePaiement
+
+      example:
+        membreId: 45
+        typeCotisation: Mensuelle
+        montant: 20000
+        devise: Ar
+        dateEncaissement: "2026-04-20"
+        modePaiement: MobileMoney
+        traceTresorier: "Reçu n°12345 - Avril"
+
