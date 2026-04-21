@@ -1,0 +1,2947 @@
+openapi: 3.0.3
+info:
+  contact:
+    name: Fédération Agricole Madagascar
+  description: |
+    Spécification OpenAPI pour la digitalisation des processus administratifs de la fédération de collectivités agricoles de Madagascar. Couvre la gestion des collectivités, membres, cotisations, comptes, activités, assiduité et statistiques.
+  title: API Fédération de Collectivités Agricoles
+  version: 1.0.0
+servers:
+- description: Serveur de production
+  url: https://api.federation-agricole.mg/v1
+tags:
+- description: Fonctionnalité A — Ouverture et gestion des collectivités
+  name: Collectivités
+- description: Fonctionnalité B — Admission et gestion des membres
+  name: Membres
+- description: Fonctionnalité C — Cotisations et paiements
+  name: Cotisations
+- description: Fonctionnalité D — Comptes et situation de trésorerie
+  name: Trésorerie
+- description: Fonctionnalité E — Activités des collectivités et de la fédération
+  name: Activités
+- description: Fonctionnalité F — Suivi de présence des membres
+  name: Assiduité
+- description: Fonctionnalité G — Rapports et statistiques
+  name: Statistiques
+paths:
+  /collectivites:
+    get:
+      operationId: listCollectivites
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Filtrer par ville
+        explode: true
+        in: query
+        name: ville
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filtrer par spécialité agricole
+        explode: true
+        in: query
+        name: specialite
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listCollectivites_200_response'
+          description: Liste des collectivités
+        "400":
+          content:
+            application/json:
+              example:
+                code: BAD_REQUEST
+                message: Les paramètres fournis sont invalides.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Requête invalide
+      summary: Lister toutes les collectivités
+      tags:
+      - Collectivités
+      x-accepts:
+      - application/json
+    post:
+      description: |
+        Soumet une demande d'ouverture. La fédération doit ensuite accorder l'autorisation formelle via PATCH /collectivites/{id}/autorisation. Conditions : au moins 10 membres avec 6 mois d'ancienneté, postes spécifiques pourvus.
+      operationId: createCollectivite
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectiviteCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivite'
+          description: Demande d'ouverture créée
+        "400":
+          content:
+            application/json:
+              example:
+                code: BAD_REQUEST
+                message: Les paramètres fournis sont invalides.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Requête invalide
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Demander l'ouverture d'une nouvelle collectivité
+      tags:
+      - Collectivités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}:
+    get:
+      operationId: getCollectivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivite'
+          description: Détail d'une collectivité
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir une collectivité
+      tags:
+      - Collectivités
+      x-accepts:
+      - application/json
+    patch:
+      operationId: updateCollectivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectiviteUpdate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivite'
+          description: Collectivité mise à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Mettre à jour une collectivité
+      tags:
+      - Collectivités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/autorisation:
+    patch:
+      operationId: setAutorisationCollectivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/setAutorisationCollectivite_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivite'
+          description: Statut d'autorisation mis à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Accorder ou refuser l'autorisation d'ouverture
+      tags:
+      - Collectivités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/membres:
+    get:
+      operationId: listMembres
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Filtrer par statut
+        explode: true
+        in: query
+        name: statut
+        required: false
+        schema:
+          enum:
+          - actif
+          - demissionne
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: poste
+        required: false
+        schema:
+          $ref: '#/components/schemas/PosteEnum'
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listMembres_200_response'
+          description: Liste des membres
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les membres d'une collectivité
+      tags:
+      - Membres
+      x-accepts:
+      - application/json
+    post:
+      description: |
+        Conditions : parrainage par un membre confirmé avec plus de 90 jours d'ancienneté, informations personnelles complètes, frais d'adhésion de 50 000 MGA réglés.
+      operationId: admettreMembreCollectivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreAdmission'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+          description: Membre admis
+        "400":
+          content:
+            application/json:
+              example:
+                code: BAD_REQUEST
+                message: Les paramètres fournis sont invalides.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Requête invalide
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Admettre un nouveau membre dans une collectivité
+      tags:
+      - Membres
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/membres/{membreId}:
+    get:
+      operationId: getMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+          description: Détail d'un membre
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir un membre
+      tags:
+      - Membres
+      x-accepts:
+      - application/json
+    patch:
+      operationId: updateMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreUpdate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+          description: Membre mis à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Mettre à jour les informations d'un membre
+      tags:
+      - Membres
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/membres/{membreId}/transfert:
+    post:
+      operationId: transfererMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transfererMembre_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+          description: Transfert effectué
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Transférer un membre vers une autre collectivité
+      tags:
+      - Membres
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/membres/{membreId}/demission:
+    post:
+      operationId: demissionMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/demissionMembre_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+          description: Démission enregistrée
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Enregistrer la démission d'un membre
+      tags:
+      - Membres
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/cotisations:
+    get:
+      operationId: listCotisations
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: membre_id
+        required: false
+        schema:
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: type
+        required: false
+        schema:
+          enum:
+          - mensuelle
+          - annuelle
+          - ponctuelle
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_debut
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_fin
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listCotisations_200_response'
+          description: Liste des cotisations
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les cotisations d'une collectivité
+      tags:
+      - Cotisations
+      x-accepts:
+      - application/json
+    post:
+      operationId: createCotisation
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CotisationCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cotisation'
+          description: Cotisation créée
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Créer une cotisation
+      tags:
+      - Cotisations
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/cotisations/{cotisationId}/encaissements:
+    get:
+      operationId: listEncaissements
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: cotisationId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Encaissement'
+                type: array
+          description: Liste des encaissements
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les encaissements d'une cotisation
+      tags:
+      - Cotisations
+      x-accepts:
+      - application/json
+    post:
+      description: Le trésorier enregistre un paiement reçu pour une cotisation.
+      operationId: createEncaissement
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: cotisationId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EncaissementCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Encaissement'
+          description: Encaissement enregistré
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Enregistrer un encaissement
+      tags:
+      - Cotisations
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/comptes:
+    get:
+      operationId: listComptes
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: type
+        required: false
+        schema:
+          enum:
+          - caisse
+          - bancaire
+          - mobile_money
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Compte'
+                type: array
+          description: Liste des comptes
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les comptes d'une collectivité
+      tags:
+      - Trésorerie
+      x-accepts:
+      - application/json
+    post:
+      description: |
+        Une collectivité ne peut avoir qu'une seule caisse. Plusieurs comptes bancaires et mobile money sont autorisés.
+      operationId: createCompte
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompteCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: Compte créé
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Créer un compte
+      tags:
+      - Trésorerie
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/comptes/{compteId}:
+    delete:
+      operationId: deleteCompte
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: compteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Compte supprimé
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Supprimer un compte
+      tags:
+      - Trésorerie
+      x-accepts:
+      - application/json
+    get:
+      operationId: getCompte
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: compteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: Détail du compte avec solde
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir un compte et son solde
+      tags:
+      - Trésorerie
+      x-accepts:
+      - application/json
+    patch:
+      operationId: updateCompte
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: false
+        in: path
+        name: compteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompteUpdate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: Compte mis à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Mettre à jour un compte
+      tags:
+      - Trésorerie
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/tresorerie:
+    get:
+      description: Retourne le solde consolidé de tous les comptes de la collectivité.
+      operationId: getSituationTresorerie
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SituationTresorerie'
+          description: Situation de trésorerie
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir la situation de trésorerie globale
+      tags:
+      - Trésorerie
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/activites:
+    get:
+      operationId: listActivites
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: type
+        required: false
+        schema:
+          enum:
+          - ag_mensuelle
+          - formation_juniors
+          - exceptionnelle
+          - federation
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_debut
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_fin
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listActivites_200_response'
+          description: Liste des activités
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les activités d'une collectivité
+      tags:
+      - Activités
+      x-accepts:
+      - application/json
+    post:
+      operationId: createActivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiviteCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite'
+          description: Activité créée
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Créer une activité exceptionnelle
+      tags:
+      - Activités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/activites/{activiteId}:
+    delete:
+      operationId: deleteActivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Activité supprimée
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Supprimer une activité
+      tags:
+      - Activités
+      x-accepts:
+      - application/json
+    get:
+      operationId: getActivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite'
+          description: Détail d'une activité
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir une activité
+      tags:
+      - Activités
+      x-accepts:
+      - application/json
+    patch:
+      operationId: updateActivite
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiviteUpdate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite'
+          description: Activité mise à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Mettre à jour une activité
+      tags:
+      - Activités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /federation/activites:
+    get:
+      operationId: listActivitesFederation
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listActivites_200_response'
+          description: Liste des activités fédérales
+      summary: Lister les activités planifiées par la fédération
+      tags:
+      - Activités
+      x-accepts:
+      - application/json
+    post:
+      operationId: createActiviteFederation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiviteCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite'
+          description: Activité fédérale créée
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Créer une activité fédérale
+      tags:
+      - Activités
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/activites/{activiteId}/presences:
+    get:
+      operationId: listPresences
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Presence'
+                type: array
+          description: Feuille de présence
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir la feuille de présence d'une activité
+      tags:
+      - Assiduité
+      x-accepts:
+      - application/json
+    post:
+      description: |
+        Le secrétaire enregistre la présence ou l'excuse d'un membre. Un membre d'une autre collectivité peut être inscrit mais sa présence ne comptera pas dans son taux d'assiduité annuel.
+      operationId: createPresence
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresenceCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Presence'
+          description: Présence enregistrée
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Enregistrer la présence d'un membre
+      tags:
+      - Assiduité
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/activites/{activiteId}/presences/{membreId}:
+    patch:
+      operationId: updatePresence
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant de l'activité
+        explode: false
+        in: path
+        name: activiteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresenceUpdate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Presence'
+          description: Présence mise à jour
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Mettre à jour la présence d'un membre
+      tags:
+      - Assiduité
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/membres/{membreId}/assiduite:
+    get:
+      operationId: getAssiduiteMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: date_debut
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_fin
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TauxAssiduite'
+          description: Taux d'assiduité du membre
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Obtenir le taux d'assiduité d'un membre
+      tags:
+      - Assiduité
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/rapports/mensuel:
+    get:
+      operationId: listRapportsMensuels
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: annee
+        required: false
+        schema:
+          example: 2025
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RapportMensuel'
+                type: array
+          description: Liste des rapports mensuels
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Lister les rapports mensuels d'une collectivité
+      tags:
+      - Statistiques
+      x-accepts:
+      - application/json
+    post:
+      description: |
+        Le président soumet le taux d'assiduité global et le nombre de membres inscrits pour le mois écoulé.
+      operationId: createRapportMensuel
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RapportMensuelCreate'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RapportMensuel'
+          description: Rapport soumis
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+        "422":
+          content:
+            application/json:
+              example:
+                code: UNPROCESSABLE_ENTITY
+                message: Conditions métier non remplies.
+                details:
+                - Le parrain doit avoir plus de 90 jours d'ancienneté.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Entité non traitable — règles métier non respectées
+      summary: Soumettre le rapport mensuel à la fédération
+      tags:
+      - Statistiques
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/statistiques/membres:
+    get:
+      description: |
+        Retourne pour chaque membre actif : taux d'assiduité, montant encaissé et montant impayé potentiel sur une période donnée.
+      operationId: getStatsMembres
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: date_debut
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_fin
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/StatsMembre'
+                type: array
+          description: Statistiques détaillées par membre
+        "400":
+          content:
+            application/json:
+              example:
+                code: BAD_REQUEST
+                message: Les paramètres fournis sont invalides.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Requête invalide
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Statistiques détaillées des membres actifs
+      tags:
+      - Statistiques
+      x-accepts:
+      - application/json
+  /collectivites/{collectiviteId}/statistiques/membres/{membreId}:
+    get:
+      operationId: getStatsMembre
+      parameters:
+      - description: Identifiant de la collectivité
+        explode: false
+        in: path
+        name: collectiviteId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - description: Identifiant du membre
+        explode: false
+        in: path
+        name: membreId
+        required: true
+        schema:
+          type: integer
+        style: simple
+      - explode: true
+        in: query
+        name: date_debut
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: date_fin
+        required: true
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsMembre'
+          description: Statistiques du membre
+        "404":
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: La ressource demandée est introuvable.
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Ressource introuvable
+      summary: Statistiques détaillées d'un membre
+      tags:
+      - Statistiques
+      x-accepts:
+      - application/json
+components:
+  parameters:
+    CollectiviteId:
+      description: Identifiant de la collectivité
+      explode: false
+      in: path
+      name: collectiviteId
+      required: true
+      schema:
+        type: integer
+      style: simple
+    MembreId:
+      description: Identifiant du membre
+      explode: false
+      in: path
+      name: membreId
+      required: true
+      schema:
+        type: integer
+      style: simple
+    ActiviteId:
+      description: Identifiant de l'activité
+      explode: false
+      in: path
+      name: activiteId
+      required: true
+      schema:
+        type: integer
+      style: simple
+    PageParam:
+      explode: true
+      in: query
+      name: page
+      required: false
+      schema:
+        default: 1
+        minimum: 1
+        type: integer
+      style: form
+    LimitParam:
+      explode: true
+      in: query
+      name: limit
+      required: false
+      schema:
+        default: 20
+        maximum: 100
+        minimum: 1
+        type: integer
+      style: form
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          example:
+            code: BAD_REQUEST
+            message: Les paramètres fournis sont invalides.
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Requête invalide
+    NotFound:
+      content:
+        application/json:
+          example:
+            code: NOT_FOUND
+            message: La ressource demandée est introuvable.
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Ressource introuvable
+    UnprocessableEntity:
+      content:
+        application/json:
+          example:
+            code: UNPROCESSABLE_ENTITY
+            message: Conditions métier non remplies.
+            details:
+            - Le parrain doit avoir plus de 90 jours d'ancienneté.
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Entité non traitable — règles métier non respectées
+  schemas:
+    PosteEnum:
+      description: Poste d'un membre dans une collectivité ou à la fédération
+      enum:
+      - president
+      - president_adjoint
+      - tresorier
+      - secretaire
+      - membre_confirme
+      - membre_junior
+      type: string
+    ModePaiementEnum:
+      enum:
+      - espece
+      - virement_bancaire
+      - mobile_money
+      type: string
+    TypeCompteEnum:
+      enum:
+      - caisse
+      - bancaire
+      - mobile_money
+      type: string
+    NomBanqueEnum:
+      enum:
+      - BRED
+      - MCB
+      - BMOI
+      - BOA
+      - BGFI
+      - AFG
+      - ACCES_BANQUE
+      - BAOBAB
+      - SIPEM
+      type: string
+    ServiceMobileMoneyEnum:
+      enum:
+      - Orange_Money
+      - Mvola
+      - Airtel_Money
+      type: string
+    TypeActiviteEnum:
+      enum:
+      - ag_mensuelle
+      - formation_juniors
+      - exceptionnelle
+      - federation
+      type: string
+    Collectivite:
+      example:
+        ville: ville
+        federation_id: 5
+        numero: numero
+        specialite: specialite
+        id: 5
+        nom: nom
+        statut: en_attente
+        date_creation: 2000-01-23
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        numero:
+          description: Numéro unique de la collectivité
+          type: string
+        nom:
+          description: Nom unique de la collectivité
+          type: string
+        ville:
+          type: string
+        specialite:
+          description: Spécialité agricole
+          type: string
+        date_creation:
+          format: date
+          type: string
+        statut:
+          enum:
+          - en_attente
+          - autorisee
+          - refusee
+          readOnly: true
+          type: string
+        federation_id:
+          readOnly: true
+          type: integer
+      type: object
+    CollectiviteCreate:
+      example:
+        ville: ville
+        numero: numero
+        specialite: specialite
+        nom: nom
+        date_creation: 2000-01-23
+      properties:
+        numero:
+          type: string
+        nom:
+          type: string
+        ville:
+          type: string
+        specialite:
+          type: string
+        date_creation:
+          format: date
+          type: string
+      required:
+      - date_creation
+      - nom
+      - numero
+      - specialite
+      - ville
+      type: object
+    CollectiviteUpdate:
+      example:
+        ville: ville
+        specialite: specialite
+        nom: nom
+      properties:
+        nom:
+          type: string
+        ville:
+          type: string
+        specialite:
+          type: string
+      type: object
+    Membre:
+      example:
+        telephone: telephone
+        nom: nom
+        genre: masculin
+        adresse: adresse
+        parrain_id: 5
+        date_adhesion: 2000-01-23
+        id: 5
+        poste: president
+        prenom: prenom
+        date_naissance: 2000-01-23
+        email: email
+        statut: actif
+        metier: metier
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        nom:
+          type: string
+        prenom:
+          type: string
+        date_naissance:
+          format: date
+          type: string
+        genre:
+          enum:
+          - masculin
+          - feminin
+          type: string
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        email:
+          format: email
+          type: string
+        date_adhesion:
+          format: date
+          readOnly: true
+          type: string
+        poste:
+          $ref: '#/components/schemas/PosteEnum'
+        statut:
+          enum:
+          - actif
+          - demissionne
+          readOnly: true
+          type: string
+        parrain_id:
+          readOnly: true
+          type: integer
+      type: object
+    MembreAdmission:
+      example:
+        mode_paiement_adhesion: mobile_money
+        genre: masculin
+        adresse: adresse
+        parrain_id: 0
+        telephone: telephone
+        nom: nom
+        prenom: prenom
+        date_naissance: 2000-01-23
+        email: email
+        metier: metier
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        date_naissance:
+          format: date
+          type: string
+        genre:
+          enum:
+          - masculin
+          - feminin
+          type: string
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        email:
+          format: email
+          type: string
+        parrain_id:
+          description: ID d'un membre confirmé avec plus de 90 jours d'ancienneté
+          type: integer
+        mode_paiement_adhesion:
+          description: Frais d'adhésion de 50 000 MGA
+          enum:
+          - mobile_money
+          - virement_bancaire
+          type: string
+      required:
+      - adresse
+      - date_naissance
+      - email
+      - genre
+      - metier
+      - mode_paiement_adhesion
+      - nom
+      - parrain_id
+      - prenom
+      - telephone
+      type: object
+    MembreUpdate:
+      example:
+        adresse: adresse
+        telephone: telephone
+        email: email
+        metier: metier
+      properties:
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        email:
+          format: email
+          type: string
+      type: object
+    Cotisation:
+      example:
+        periodicite: mensuelle
+        montant_encaisse: 9.301444243932576
+        montant_restant: 3.616076749251911
+        date_echeance: 2000-01-23
+        montant: 7.061401241503109
+        id: 5
+        membre_id: 5
+        type: mensuelle
+        collectivite_id: 2
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        membre_id:
+          type: integer
+        collectivite_id:
+          readOnly: true
+          type: integer
+        type:
+          enum:
+          - mensuelle
+          - annuelle
+          - ponctuelle
+          type: string
+        periodicite:
+          description: Renseigné uniquement si type est périodique
+          enum:
+          - mensuelle
+          - annuelle
+          nullable: true
+          type: string
+        montant:
+          description: Montant en MGA
+          format: decimal
+          type: number
+        date_echeance:
+          format: date
+          type: string
+        montant_encaisse:
+          format: decimal
+          readOnly: true
+          type: number
+        montant_restant:
+          format: decimal
+          readOnly: true
+          type: number
+      type: object
+    CotisationCreate:
+      example:
+        periodicite: mensuelle
+        date_echeance: 2000-01-23
+        montant: 6.027456183070403
+        membre_id: 0
+        motif: motif
+        type: mensuelle
+      properties:
+        membre_id:
+          type: integer
+        type:
+          enum:
+          - mensuelle
+          - annuelle
+          - ponctuelle
+          type: string
+        periodicite:
+          enum:
+          - mensuelle
+          - annuelle
+          nullable: true
+          type: string
+        montant:
+          format: decimal
+          type: number
+        date_echeance:
+          format: date
+          type: string
+        motif:
+          description: Obligatoire si type est ponctuelle
+          type: string
+      required:
+      - date_echeance
+      - membre_id
+      - montant
+      - type
+      type: object
+    Encaissement:
+      example:
+        date_encaissement: 2000-01-23
+        mode_paiement: espece
+        cotisation_id: 6
+        montant: 5.962133916683182
+        id: 0
+        compte_id: 1
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        cotisation_id:
+          type: integer
+        compte_id:
+          type: integer
+        montant:
+          format: decimal
+          type: number
+        date_encaissement:
+          format: date
+          type: string
+        mode_paiement:
+          $ref: '#/components/schemas/ModePaiementEnum'
+      type: object
+    EncaissementCreate:
+      example:
+        date_encaissement: 2000-01-23
+        mode_paiement: espece
+        montant: 6.027456183070403
+        compte_id: 0
+      properties:
+        compte_id:
+          type: integer
+        montant:
+          format: decimal
+          type: number
+        date_encaissement:
+          format: date
+          type: string
+        mode_paiement:
+          $ref: '#/components/schemas/ModePaiementEnum'
+      required:
+      - compte_id
+      - date_encaissement
+      - mode_paiement
+      - montant
+      type: object
+    Compte:
+      example:
+        date_solde: 2000-01-23
+        titulaire: titulaire
+        solde: 6.027456183070403
+        details:
+          numero_compte: numero_compte
+          code_banque: code_banque
+          nom_banque: BRED
+          code_guichet: code_guichet
+          cle_rib: cle_rib
+        id: 0
+        type: caisse
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        type:
+          $ref: '#/components/schemas/TypeCompteEnum'
+        titulaire:
+          type: string
+        solde:
+          description: Solde en MGA
+          format: decimal
+          type: number
+        date_solde:
+          format: date
+          type: string
+        details:
+          $ref: '#/components/schemas/Compte_details'
+      type: object
+    CompteCreate:
+      example:
+        date_solde: 2000-01-23
+        titulaire: titulaire
+        solde: 0.8008281904610115
+        details:
+          numero_compte: numero_compte
+          code_banque: code_banque
+          nom_banque: BRED
+          code_guichet: code_guichet
+          cle_rib: cle_rib
+        type: caisse
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeCompteEnum'
+        titulaire:
+          type: string
+        solde:
+          format: decimal
+          type: number
+        date_solde:
+          format: date
+          type: string
+        details:
+          $ref: '#/components/schemas/CompteCreate_details'
+      required:
+      - date_solde
+      - solde
+      - titulaire
+      - type
+      type: object
+    CompteUpdate:
+      example:
+        date_solde: 2000-01-23
+        titulaire: titulaire
+        solde: 0.8008281904610115
+      properties:
+        titulaire:
+          type: string
+        solde:
+          format: decimal
+          type: number
+        date_solde:
+          format: date
+          type: string
+      type: object
+    CompteBancaireDetails:
+      example:
+        numero_compte: numero_compte
+        code_banque: code_banque
+        nom_banque: BRED
+        code_guichet: code_guichet
+        cle_rib: cle_rib
+      properties:
+        nom_banque:
+          $ref: '#/components/schemas/NomBanqueEnum'
+        code_banque:
+          description: 5 chiffres
+          pattern: "^\\d{5}$"
+          type: string
+        code_guichet:
+          description: 5 chiffres
+          pattern: "^\\d{5}$"
+          type: string
+        numero_compte:
+          description: 11 chiffres
+          pattern: "^\\d{11}$"
+          type: string
+        cle_rib:
+          description: 2 chiffres
+          pattern: "^\\d{2}$"
+          type: string
+      required:
+      - cle_rib
+      - code_banque
+      - code_guichet
+      - nom_banque
+      - numero_compte
+      type: object
+    CompteMobileMoneyDetails:
+      properties:
+        service:
+          $ref: '#/components/schemas/ServiceMobileMoneyEnum'
+        telephone:
+          description: Numéro de téléphone unique associé au compte
+          type: string
+      required:
+      - service
+      - telephone
+      type: object
+    SituationTresorerie:
+      example:
+        date: 2000-01-23
+        detail_par_compte:
+        - titulaire: titulaire
+          solde: 5.962133916683182
+          compte_id: 1
+          type: caisse
+        - titulaire: titulaire
+          solde: 5.962133916683182
+          compte_id: 1
+          type: caisse
+        solde_total: 6.027456183070403
+        collectivite_id: 0
+      properties:
+        collectivite_id:
+          type: integer
+        date:
+          format: date
+          type: string
+        solde_total:
+          description: Solde consolidé en MGA
+          format: decimal
+          type: number
+        detail_par_compte:
+          items:
+            $ref: '#/components/schemas/SituationTresorerie_detail_par_compte_inner'
+          type: array
+      type: object
+    Activite:
+      example:
+        cible: tous
+        federation_id: 2
+        date_activite: 2000-01-23
+        titre: titre
+        obligatoire: true
+        id: 5
+        type: ag_mensuelle
+        collectivite_id: 5
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        titre:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeActiviteEnum'
+        date_activite:
+          format: date
+          type: string
+        obligatoire:
+          type: boolean
+        cible:
+          description: Membres concernés par l'obligation de présence
+          enum:
+          - tous
+          - juniors
+          - confirmes
+          type: string
+        collectivite_id:
+          nullable: true
+          type: integer
+        federation_id:
+          nullable: true
+          type: integer
+      type: object
+    ActiviteCreate:
+      example:
+        cible: tous
+        date_activite: 2000-01-23
+        titre: titre
+        obligatoire: true
+        type: ag_mensuelle
+      properties:
+        titre:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeActiviteEnum'
+        date_activite:
+          format: date
+          type: string
+        obligatoire:
+          type: boolean
+        cible:
+          enum:
+          - tous
+          - juniors
+          - confirmes
+          type: string
+      required:
+      - cible
+      - date_activite
+      - obligatoire
+      - titre
+      - type
+      type: object
+    ActiviteUpdate:
+      example:
+        cible: tous
+        date_activite: 2000-01-23
+        titre: titre
+        obligatoire: true
+      properties:
+        titre:
+          type: string
+        date_activite:
+          format: date
+          type: string
+        obligatoire:
+          type: boolean
+        cible:
+          enum:
+          - tous
+          - juniors
+          - confirmes
+          type: string
+      type: object
+    Presence:
+      example:
+        excuse: false
+        activite_id: 6
+        collectivite_origine_id: 5
+        id: 0
+        membre_id: 1
+        present: true
+        motif_absence: motif_absence
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        activite_id:
+          readOnly: true
+          type: integer
+        membre_id:
+          type: integer
+        present:
+          type: boolean
+        excuse:
+          default: false
+          type: boolean
+        motif_absence:
+          nullable: true
+          type: string
+        collectivite_origine_id:
+          description: |
+            Collectivité d'origine du membre. Si différente de la collectivité hôte, la présence n'est pas comptabilisée dans le taux d'assiduité.
+          type: integer
+      type: object
+    PresenceCreate:
+      example:
+        excuse: false
+        collectivite_origine_id: 6
+        membre_id: 0
+        present: true
+        motif_absence: motif_absence
+      properties:
+        membre_id:
+          type: integer
+        present:
+          type: boolean
+        excuse:
+          default: false
+          type: boolean
+        motif_absence:
+          nullable: true
+          type: string
+        collectivite_origine_id:
+          nullable: true
+          type: integer
+      required:
+      - membre_id
+      - present
+      type: object
+    PresenceUpdate:
+      example:
+        excuse: true
+        present: true
+        motif_absence: motif_absence
+      properties:
+        present:
+          type: boolean
+        excuse:
+          type: boolean
+        motif_absence:
+          nullable: true
+          type: string
+      type: object
+    TauxAssiduite:
+      example:
+        taux_assiduite: 7.0614014
+        nb_presences: 5
+        nb_excuses: 5
+        date_debut: 2000-01-23
+        date_fin: 2000-01-23
+        membre_id: 0
+        collectivite_id: 6
+        nb_activites_concernees: 1
+        nb_absences: 2
+      properties:
+        membre_id:
+          type: integer
+        collectivite_id:
+          type: integer
+        date_debut:
+          format: date
+          type: string
+        date_fin:
+          format: date
+          type: string
+        nb_activites_concernees:
+          type: integer
+        nb_presences:
+          type: integer
+        nb_excuses:
+          type: integer
+        nb_absences:
+          type: integer
+        taux_assiduite:
+          description: Pourcentage entre 0 et 100
+          format: float
+          type: number
+      type: object
+    StatsMembre:
+      example:
+        taux_assiduite: 6.0274563
+        montant_encaisse: 1.4658129805029452
+        date_debut: 2000-01-23
+        montant_impaye: 5.962133916683182
+        date_fin: 2000-01-23
+        membre_id: 0
+        poste: president
+        nom: nom
+        prenom: prenom
+      properties:
+        membre_id:
+          type: integer
+        nom:
+          type: string
+        prenom:
+          type: string
+        poste:
+          $ref: '#/components/schemas/PosteEnum'
+        date_debut:
+          format: date
+          type: string
+        date_fin:
+          format: date
+          type: string
+        taux_assiduite:
+          description: Taux d'assiduité en pourcentage
+          format: float
+          type: number
+        montant_encaisse:
+          description: Total encaissé sur la période en MGA
+          format: decimal
+          type: number
+        montant_impaye:
+          description: Montant potentiellement impayé sur la période en MGA
+          format: decimal
+          type: number
+      type: object
+    RapportMensuel:
+      example:
+        nb_membres: 2
+        id: 0
+        annee: 5
+        taux_assiduite_global: 5.637377
+        collectivite_id: 6
+        mois: 2
+        date_rapport: 2000-01-23
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        collectivite_id:
+          readOnly: true
+          type: integer
+        mois:
+          maximum: 12
+          minimum: 1
+          type: integer
+        annee:
+          type: integer
+        taux_assiduite_global:
+          description: Taux d'assiduité moyen de la collectivité en pourcentage
+          format: float
+          type: number
+        nb_membres:
+          description: Nombre de membres inscrits au moment du rapport
+          type: integer
+        date_rapport:
+          format: date
+          readOnly: true
+          type: string
+      type: object
+    RapportMensuelCreate:
+      example:
+        nb_membres: 5
+        annee: 6
+        taux_assiduite_global: 1.4658129
+        mois: 1
+      properties:
+        mois:
+          maximum: 12
+          minimum: 1
+          type: integer
+        annee:
+          type: integer
+        taux_assiduite_global:
+          format: float
+          type: number
+        nb_membres:
+          type: integer
+      required:
+      - annee
+      - mois
+      - nb_membres
+      - taux_assiduite_global
+      type: object
+    PaginatedResponse:
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        data:
+          items: {}
+          type: array
+      type: object
+    Error:
+      example:
+        code: code
+        details:
+        - details
+        - details
+        message: message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          items:
+            type: string
+          type: array
+      type: object
+    listCollectivites_200_response:
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - properties:
+          data:
+            items:
+              $ref: '#/components/schemas/Collectivite'
+            type: array
+        type: object
+      example:
+        total: 1
+        data:
+        - ville: ville
+          federation_id: 5
+          numero: numero
+          specialite: specialite
+          id: 5
+          nom: nom
+          statut: en_attente
+          date_creation: 2000-01-23
+        - ville: ville
+          federation_id: 5
+          numero: numero
+          specialite: specialite
+          id: 5
+          nom: nom
+          statut: en_attente
+          date_creation: 2000-01-23
+        limit: 6
+        page: 0
+    setAutorisationCollectivite_request:
+      properties:
+        autorisee:
+          type: boolean
+        motif_refus:
+          description: Obligatoire si autorisee est false
+          type: string
+      required:
+      - autorisee
+      type: object
+    listMembres_200_response:
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - properties:
+          data:
+            items:
+              $ref: '#/components/schemas/Membre'
+            type: array
+        type: object
+      example:
+        total: 1
+        data:
+        - telephone: telephone
+          nom: nom
+          genre: masculin
+          adresse: adresse
+          parrain_id: 5
+          date_adhesion: 2000-01-23
+          id: 5
+          poste: president
+          prenom: prenom
+          date_naissance: 2000-01-23
+          email: email
+          statut: actif
+          metier: metier
+        - telephone: telephone
+          nom: nom
+          genre: masculin
+          adresse: adresse
+          parrain_id: 5
+          date_adhesion: 2000-01-23
+          id: 5
+          poste: president
+          prenom: prenom
+          date_naissance: 2000-01-23
+          email: email
+          statut: actif
+          metier: metier
+        limit: 6
+        page: 0
+    transfererMembre_request:
+      properties:
+        nouvelle_collectivite_id:
+          type: integer
+        motif:
+          type: string
+      required:
+      - nouvelle_collectivite_id
+      type: object
+    demissionMembre_request:
+      properties:
+        date_demission:
+          format: date
+          type: string
+        motif:
+          type: string
+      required:
+      - date_demission
+      type: object
+    listCotisations_200_response:
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - properties:
+          data:
+            items:
+              $ref: '#/components/schemas/Cotisation'
+            type: array
+        type: object
+      example:
+        total: 1
+        data:
+        - periodicite: mensuelle
+          montant_encaisse: 9.301444243932576
+          montant_restant: 3.616076749251911
+          date_echeance: 2000-01-23
+          montant: 7.061401241503109
+          id: 5
+          membre_id: 5
+          type: mensuelle
+          collectivite_id: 2
+        - periodicite: mensuelle
+          montant_encaisse: 9.301444243932576
+          montant_restant: 3.616076749251911
+          date_echeance: 2000-01-23
+          montant: 7.061401241503109
+          id: 5
+          membre_id: 5
+          type: mensuelle
+          collectivite_id: 2
+        limit: 6
+        page: 0
+    listActivites_200_response:
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - properties:
+          data:
+            items:
+              $ref: '#/components/schemas/Activite'
+            type: array
+        type: object
+      example:
+        total: 1
+        data:
+        - cible: tous
+          federation_id: 2
+          date_activite: 2000-01-23
+          titre: titre
+          obligatoire: true
+          id: 5
+          type: ag_mensuelle
+          collectivite_id: 5
+        - cible: tous
+          federation_id: 2
+          date_activite: 2000-01-23
+          titre: titre
+          obligatoire: true
+          id: 5
+          type: ag_mensuelle
+          collectivite_id: 5
+        limit: 6
+        page: 0
+    Compte_details:
+      description: Présent uniquement pour les types bancaire et mobile_money
+      nullable: true
+      oneOf:
+      - $ref: '#/components/schemas/CompteBancaireDetails'
+      - $ref: '#/components/schemas/CompteMobileMoneyDetails'
+    CompteCreate_details:
+      nullable: true
+      oneOf:
+      - $ref: '#/components/schemas/CompteBancaireDetails'
+      - $ref: '#/components/schemas/CompteMobileMoneyDetails'
+    SituationTresorerie_detail_par_compte_inner:
+      example:
+        titulaire: titulaire
+        solde: 5.962133916683182
+        compte_id: 1
+        type: caisse
+      properties:
+        compte_id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/TypeCompteEnum'
+        titulaire:
+          type: string
+        solde:
+          format: decimal
+          type: number
+      type: object
+
