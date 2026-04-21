@@ -6,7 +6,7 @@ info:
     de la fédération de collectivités agricoles de Madagascar.
     Couvre la gestion des collectivités, membres, cotisations, comptes,
     activités, assiduité et statistiques.
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: Fédération Agricole Madagascar
 
@@ -28,7 +28,9 @@ tags:
   - name: Assiduité
     description: "Fonctionnalité F — Suivi de présence des membres"
   - name: Statistiques
-    description: "Fonctionnalité G — Rapports et statistiques"
+    description: "Fonctionnalité G — Rapports et statistiques des collectivités"
+  - name: Statistiques Fédération
+    description: "Fonctionnalité H — Rapports globaux mensuels et annuels de la fédération"
 paths:
   /collectivites:
     get:
@@ -158,6 +160,7 @@ paths:
                 $ref: '#/components/schemas/Collectivite'
         '404':
           $ref: '#/components/responses/NotFound'
+
   /collectivites/{collectiviteId}/membres:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -200,9 +203,14 @@ paths:
       summary: Admettre un nouveau membre dans une collectivité
       operationId: admettreMembreCollectivite
       description: >
-        Conditions : parrainage par un membre confirmé avec plus de 90 jours
-        d'ancienneté, informations personnelles complètes, frais d'adhésion
-        de 50 000 MGA réglés.
+        Nouvelles conditions d'admission (B-2) en vigueur depuis le 21 avril 2026 :
+        - Être parrainé par au moins deux membres confirmés de la fédération.
+          Le nombre de parrains issus de la collectivité cible doit être >= au nombre
+          de parrains issus d'autres collectivités.
+        - Fournir ses informations personnelles incluant la nature de la relation
+          avec chaque parrain (famille, amis, collègues, etc.).
+        - Régler les frais d'adhésion de 50 000 MGA + l'intégralité des cotisations
+          annuelles obligatoires imposées par la collectivité cible.
       requestBody:
         required: true
         content:
@@ -323,6 +331,7 @@ paths:
                 $ref: '#/components/schemas/Membre'
         '404':
           $ref: '#/components/responses/NotFound'
+
   /collectivites/{collectiviteId}/cotisations:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -437,6 +446,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+
   /collectivites/{collectiviteId}/comptes:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -558,6 +568,7 @@ paths:
                 $ref: '#/components/schemas/SituationTresorerie'
         '404':
           $ref: '#/components/responses/NotFound'
+
   /collectivites/{collectiviteId}/activites:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -712,6 +723,8 @@ paths:
                 $ref: '#/components/schemas/Activite'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+
+
   /collectivites/{collectiviteId}/activites/{activiteId}/presences:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -813,6 +826,8 @@ paths:
                 $ref: '#/components/schemas/TauxAssiduite'
         '404':
           $ref: '#/components/responses/NotFound'
+
+
   /collectivites/{collectiviteId}/rapports/mensuel:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -930,7 +945,150 @@ paths:
                 $ref: '#/components/schemas/StatsMembre'
         '404':
           $ref: '#/components/responses/NotFound'
+
+
+  /federation/rapports/mensuel:
+    get:
+      tags: [Statistiques Fédération]
+      summary: Lister les rapports mensuels globaux de la fédération
+      operationId: listRapportsMensuelsFederation
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: annee
+          in: query
+          schema:
+            type: integer
+            example: 2025
+          description: Filtrer par année
+        - name: mois
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filtrer par mois
+      responses:
+        '200':
+          description: Liste des rapports mensuels de la fédération
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RapportMensuelFederation'
+
+    post:
+      tags: [Statistiques Fédération]
+      summary: Générer le rapport mensuel global de la fédération
+      operationId: createRapportMensuelFederation
+      description: >
+        Le secrétaire de la fédération consolide mensuellement les données
+        issues de toutes les collectivités : taux d'assiduité global par collectivité,
+        pourcentage de membres à jour dans leurs cotisations, et nombre de nouveaux
+        adhérents par collectivité sur la période.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RapportMensuelFederationCreate'
+      responses:
+        '201':
+          description: Rapport mensuel fédération créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RapportMensuelFederation'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /federation/rapports/annuel:
+    get:
+      tags: [Statistiques Fédération]
+      summary: Lister les rapports annuels de la fédération
+      operationId: listRapportsAnnuelsFederation
+      parameters:
+        - name: annee
+          in: query
+          schema:
+            type: integer
+            example: 2025
+      responses:
+        '200':
+          description: Liste des rapports annuels de la fédération
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RapportAnnuelFederation'
+
+    post:
+      tags: [Statistiques Fédération]
+      summary: Générer le rapport annuel de la fédération
+      operationId: createRapportAnnuelFederation
+      description: >
+        Consolide les données annuelles de toutes les collectivités pour présentation
+        lors de l'assemblée générale annuelle. Permet de comparer les collectivités
+        et d'identifier les plus méritantes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RapportAnnuelFederationCreate'
+      responses:
+        '201':
+          description: Rapport annuel fédération créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RapportAnnuelFederation'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /federation/statistiques/collectivites:
+    get:
+      tags: [Statistiques Fédération]
+      summary: Statistiques comparatives de toutes les collectivités
+      operationId: getStatsCollectivitesFederation
+      description: >
+        Retourne pour chaque collectivité les trois indicateurs clés sur une
+        période donnée : taux d'assiduité global, pourcentage de membres à jour
+        dans leurs cotisations, nombre de nouveaux adhérents.
+      parameters:
+        - name: date_debut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: date_fin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Statistiques par collectivité
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatsCollectiviteFederation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 components:
+
   parameters:
     CollectiviteId:
       name: collectiviteId
@@ -972,9 +1130,8 @@ components:
         default: 20
         minimum: 1
         maximum: 100
-  schemas:
 
-    # — Énumérations —
+  schemas:
     PosteEnum:
       type: string
       enum:
@@ -1112,8 +1269,12 @@ components:
         - metier
         - telephone
         - email
-        - parrain_id
+        - parrains
         - mode_paiement_adhesion
+      description: >
+        Nouvelles conditions B-2 (21 avril 2026) : au moins 2 parrains confirmés,
+        majorité issue de la collectivité cible, relation obligatoire avec chaque parrain,
+        frais d'adhésion + cotisations annuelles obligatoires à régler.
       properties:
         nom:
           type: string
@@ -1134,13 +1295,34 @@ components:
         email:
           type: string
           format: email
-        parrain_id:
-          type: integer
-          description: ID d'un membre confirmé avec plus de 90 jours d'ancienneté
+        parrains:
+          type: array
+          minItems: 2
+          description: >
+            Au moins 2 membres confirmés de la fédération. Le nombre de parrains
+            appartenant à la collectivité cible doit être >= au nombre de parrains
+            d'autres collectivités.
+          items:
+            $ref: '#/components/schemas/ParrainAdmission'
         mode_paiement_adhesion:
           type: string
           enum: [mobile_money, virement_bancaire]
-          description: Frais d'adhésion de 50 000 MGA
+          description: >
+            Mode de paiement pour les frais d'adhésion de 50 000 MGA
+            et les cotisations annuelles obligatoires de la collectivité.
+
+    ParrainAdmission:
+      type: object
+      required: [membre_id, relation]
+      description: Parrain confirmé avec plus de 90 jours d'ancienneté dans la fédération.
+      properties:
+        membre_id:
+          type: integer
+          description: ID du membre confirmé qui parraine le candidat
+        relation:
+          type: string
+          description: Nature de la relation entre le candidat et ce parrain (ex. famille, amis, collègues)
+          example: "collègues"
 
     MembreUpdate:
       type: object
@@ -1155,7 +1337,6 @@ components:
           type: string
           format: email
 
-    # — Cotisation —
     Cotisation:
       type: object
       properties:
@@ -1366,7 +1547,6 @@ components:
                 type: number
                 format: decimal
 
-    # — Activité —
     Activite:
       type: object
       properties:
@@ -1424,7 +1604,6 @@ components:
           type: string
           enum: [tous, juniors, confirmes]
 
-    # — Présence —
     Presence:
       type: object
       properties:
@@ -1479,7 +1658,6 @@ components:
           type: string
           nullable: true
 
-    # — Statistiques —
     TauxAssiduite:
       type: object
       properties:
@@ -1577,6 +1755,113 @@ components:
           type: number
           format: float
         nb_membres:
+          type: integer
+
+    StatsCollectiviteFederation:
+      type: object
+      description: Indicateurs clés d'une collectivité sur une période donnée pour la fédération.
+      properties:
+        collectivite_id:
+          type: integer
+        collectivite_nom:
+          type: string
+        collectivite_ville:
+          type: string
+        date_debut:
+          type: string
+          format: date
+        date_fin:
+          type: string
+          format: date
+        taux_assiduite_global:
+          type: number
+          format: float
+          description: Taux d'assiduité moyen de tous les membres actifs sur la période (en %)
+        pourcentage_membres_a_jour:
+          type: number
+          format: float
+          description: >
+            Pourcentage de membres actifs à jour dans leurs cotisations sur la période (en %)
+        nb_nouveaux_adherents:
+          type: integer
+          description: Nombre de nouveaux membres ayant adhéré sur la période
+
+    RapportMensuelFederation:
+      type: object
+      description: Rapport mensuel global consolidé par le secrétaire de la fédération.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        mois:
+          type: integer
+          minimum: 1
+          maximum: 12
+        annee:
+          type: integer
+        date_rapport:
+          type: string
+          format: date
+          readOnly: true
+        stats_par_collectivite:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsCollectiviteFederation'
+
+    RapportMensuelFederationCreate:
+      type: object
+      required: [mois, annee]
+      description: >
+        Déclenche la consolidation des données de toutes les collectivités
+        pour le mois et l'année indiqués.
+      properties:
+        mois:
+          type: integer
+          minimum: 1
+          maximum: 12
+        annee:
+          type: integer
+
+    RapportAnnuelFederation:
+      type: object
+      description: >
+        Rapport annuel consolidé présenté lors de l'assemblée générale annuelle.
+        Permet de comparer les collectivités et d'identifier les plus méritantes.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        annee:
+          type: integer
+        date_rapport:
+          type: string
+          format: date
+          readOnly: true
+        stats_par_collectivite:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatsCollectiviteFederation'
+        collectivite_plus_assidue_id:
+          type: integer
+          description: ID de la collectivité ayant le meilleur taux d'assiduité annuel
+          readOnly: true
+        collectivite_plus_a_jour_id:
+          type: integer
+          description: ID de la collectivité avec le plus grand % de membres à jour
+          readOnly: true
+        collectivite_plus_adherents_id:
+          type: integer
+          description: ID de la collectivité ayant le plus de nouveaux adhérents
+          readOnly: true
+
+    RapportAnnuelFederationCreate:
+      type: object
+      required: [annee]
+      description: >
+        Déclenche la consolidation annuelle de toutes les collectivités
+        pour l'année indiquée.
+      properties:
+        annee:
           type: integer
 
     # — Pagination —
