@@ -158,11 +158,6 @@ paths:
                 $ref: '#/components/schemas/Collectivite'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  # ----------------------------------------------------------------------------
-  # B — MEMBRES
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/membres:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -328,11 +323,6 @@ paths:
                 $ref: '#/components/schemas/Membre'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  # ----------------------------------------------------------------------------
-  # C — COTISATIONS
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/cotisations:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -447,11 +437,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
-
-  # ----------------------------------------------------------------------------
-  # D — TRÉSORERIE / COMPTES
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/comptes:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -573,11 +558,6 @@ paths:
                 $ref: '#/components/schemas/SituationTresorerie'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  # ----------------------------------------------------------------------------
-  # E — ACTIVITÉS
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/activites:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -732,11 +712,6 @@ paths:
                 $ref: '#/components/schemas/Activite'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
-
-  # ----------------------------------------------------------------------------
-  # F — ASSIDUITÉ / PRÉSENCES
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/activites/{activiteId}/presences:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -838,11 +813,6 @@ paths:
                 $ref: '#/components/schemas/TauxAssiduite'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  # ----------------------------------------------------------------------------
-  # G — STATISTIQUES
-  # ----------------------------------------------------------------------------
-
   /collectivites/{collectiviteId}/rapports/mensuel:
     parameters:
       - $ref: '#/components/parameters/CollectiviteId'
@@ -960,15 +930,7 @@ paths:
                 $ref: '#/components/schemas/StatsMembre'
         '404':
           $ref: '#/components/responses/NotFound'
-
-# ==============================================================================
-# COMPONENTS
-# ==============================================================================
 components:
-
-  # ----------------------------------------------------------------------------
-  # PARAMETERS
-  # ----------------------------------------------------------------------------
   parameters:
     CollectiviteId:
       name: collectiviteId
@@ -1010,10 +972,6 @@ components:
         default: 20
         minimum: 1
         maximum: 100
-
-  # ----------------------------------------------------------------------------
-  # SCHEMAS
-  # ----------------------------------------------------------------------------
   schemas:
 
     # — Énumérations —
@@ -1647,10 +1605,6 @@ components:
           type: array
           items:
             type: string
-
-  # ----------------------------------------------------------------------------
-  # RESPONSES
-  # ----------------------------------------------------------------------------
   responses:
     BadRequest:
       description: Requête invalide
