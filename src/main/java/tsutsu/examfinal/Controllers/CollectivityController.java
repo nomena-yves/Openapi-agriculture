@@ -23,9 +23,9 @@ public class CollectivityController {
     }
     @PostMapping
     public ResponseEntity<List<CollectivityEntity>> createCollectivities(
-            @RequestBody @Valid List<CreateCollectivityDTO> dtos) {
+            @RequestBody @Valid List<CreateCollectivityDTO> DTOS) {
 
-        List<CollectivityEntity> created = collectivityService.createCollectivities(dtos);
+        List<CollectivityEntity> created = collectivityService.createCollectivities(DTOS);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }
