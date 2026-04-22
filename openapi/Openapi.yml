@@ -1,506 +1,178 @@
 openapi: 3.1.0
 info:
-  version: 1.0.0
-  title: federation et collectivite agricole
-  description: digitalisation dans le domaine agricole
-
+  title: Agricultural federation API
+  description: |
+    # Versioning
+    This API uses semantic versioning (MAJOR.MINOR.PATCH). Available versions are : 
+    - v0.0.1 (2026-04-21) : POST /collectivities for collectivities creation and POST /members for members creation.
+  version: 0.0.1
 servers:
-  - url: http://localhost:8080
-
+  - url: 'https://localhost:8080'
 paths:
-  /collectivite:
+  '/collectivities':
     post:
-      summary: creation d'une collectivite agricole
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CollectiviteAgricole'
-      responses:
-        '201':
-          description: Collectivite creee avec succes
-        '400':
-          description: parametre invalide
-
-  /admission:
-    post:
-      summary: ajouter un membre dans la collectivité
+      summary: Create list of collectivities
+      description: |
+        During collectivity request body creation, only members ID are provided to identify members. 
+        But the response content includes members information, not only their IDs.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NouveauMembre'
-      responses:
-        '200':
-          description: le nouveau membre a été ajouter dans la collectivité
-        '404':
-          description: votre requete n a pas ete aboutis
-
-  /cotisation:
-    post:
-      summary: faire une cotisation pour la collectivité
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Cotisation'
-      responses:
-        '200':
-          description: vous avez fait une cotisation pour la collectivité
-        '404':
-          description: votre cotisation a été une echeque
-
-  /tresorier:
-    post:
-      summary: la situation tresorier d' un collectivité
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CollectiviteTresorerie'
-      responses:
-        '200':
-          description: votrdfjsfjsd
-        '400':
-          description: fdmqljmlfjmlfdjsmklfsdjqkmlfjdsmklfsd
-  /activites:
-    post:
-      summary: Créer une nouvelle activité
-      description: Permet d’ajouter une activité (obligatoire, exceptionnelle ou fédérale).
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Activite'
-      responses:
-          '201':
-            description: Activité créée avec succès
-          '400':
-            description: il y a une erreur de syntaxe sur la creation
-
-  /presences:
-    post:
-      summary: Enregistrer la présence des membres
-      description: Permet au secrétaire de saisir la présence des membres lors d’une activité.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Presence'
-      responses:
-        '201':
-          description: Présence enregistrée avec succès
-        '400':
-          description: Erreur de validation
-
-
-
-components:
-  schemas:
-    membre:
-      type: object
-      properties:
-        id:
-          type: integer
-        nomPrenom:
-          type: string
-        dateNaissance:
-          type: string
-          format: date-time
-        adress:
-          type: string
-        metierExerce:
-          type: string
-        telephone:
-          type: string
-        adressEmail:
-          type: string
-        dateAdhesion:
-          type: string
-          format: date-time
-        poste:
-          type: string
-          enum:
-            - président
-            - président adjoint
-            - trésorier
-            - secrétaire
-            - membre confirmé
-            - membre junior
-
-    CollectiviteAgricole:
-      type: object
-      properties:
-        id:
-          type: integer
-        nom:
-          type: string
-        specialite:
-          type: string
-        dateCreation:
-          type: string
-          format: date-time
-        membres:
-          type: array
-          items:
-            $ref: '#/components/schemas/membre'
-        ville:
-          type: string
-        autorisation:
-          type: boolean
-      example:
-        id: 3
-        nom: "Cooperative Rizicole d'Ambatondrazaka"
-        specialite: "Culture du riz"
-        dateCreation: "2015-03-10T00:00:00Z"
-        membres:
-          - id: 1
-            nomPrenom: "Rakoto Jean"
-            dateNaissance: "1980-03-15T00:00:00Z"
-            adress: "Antananarivo"
-            metierExerce: "Agriculteur"
-            telephone: "+261341234567"
-            adressEmail: "rakoto.jean@example.com"
-            dateAdhesion: "2023-06-01T00:00:00Z"
-            poste: "président"
-        ville: "Antananarivo"
-        autorisation: true
-
-    NouveauMembre:
-      type: object
-      properties:
-        parrainId:
-          type: integer
-          description: ID du membre parrain (ancienneté > 90 jours)
-        nomPrenoms:
-          type: string
-        dateNaissance:
-          type: string
-          format: date
-        genre:
-          type: string
-          enum: [ Homme, Femme, Autre ]
-        adresse:
-          type: string
-        metierExerce:
-            type: string
-        telephone:
-            type: string
-        email:
-            type: string
-            format: email
-        paiement:
-            type: object
-        properties:
-            montant:
-              type: number
-              example: 50000
-              devise:
-                devise:
-                  type: string
-                  example: MGA
-                  mode:
-                    type: string
-                    enum: [ MobileMoney, VirementBancaire ]
-                  required:
-                    - parrainId
-                    - nomPrenoms
-                    - dateNaissance
-                    - genre
-                    - adresse
-                    - metierExerce
-                    - telephone
-                    - email
-      example:
-            parrainId: 12
-            nomPrenoms: "Rakoto Jean"
-            dateNaissance: "1985-06-15"
-            genre: "Homme"
-            adresse: "Antananarivo, Madagascar"
-            metierExerce: "Agriculteur"
-            telephone: "+261341234567"
-            email: "rakoto.jean@example.com"
-            paiement:
-              montant: 5000
-              devise: "Ar"
-              mode: "MobileMoney"
-
-
-    Cotisation:
-      type: object
-      properties:
-        membreId:
-          type: integer
-          description: ID du membre qui verse la cotisation
-        typeCotisation:
-          type: string
-          enum: [ Mensuelle, Annuelle, Ponctuelle ]
-          description: Nature de la cotisation
-        montant:
-          type: number
-          example: 20000
-        devise:
-          type: string
-          example: Ar
-        dateEncaissement:
-          type: string
-          format: date
-          description: Date de l’encaissement
-        modePaiement:
-          type: string
-          enum: [ Espece, VirementBancaire, MobileMoney ]
-        traceTresorier:
-          type: string
-          description: Référence ou note du trésorier
-      required:
-        - membreId
-        - typeCotisation
-        - montant
-        - devise
-        - dateEncaissement
-        - modePaiement
-
-      example:
-        membreId: 45
-        typeCotisation: Mensuelle
-        montant: 20000
-        devise: Ar
-        dateEncaissement: "2026-04-20"
-        modePaiement: MobileMoney
-        traceTresorier: "Reçu n°12345 - Avril"
-
-    Compte:
-      type: object
-      properties:
-        typeCompte:
-          type: string
-          enum: [ Caisse, Bancaire, MobileMoney ]
-          description: Type de compte
-        titulaire:
-          type: string
-          description: Nom du titulaire du compte
-        banque:
-          type: string
-          enum: [ BRED, MCB, BMOI, BOA, BGFI, AFG, ACCESBANQUE, BAOBAB, SIPEM]
-          description: Nom de la banque (si type = Bancaire)
-        numeroCompte:
-              type: string
-              pattern: '^[0-9]{23}$'
-              description: Numéro de compte bancaire (23 chiffres)
-        serviceMobileMoney:
-              type: string
-              enum: [ OrangeMoney, Mvola, AirtelMoney ]
-              description: Service mobile money (si type = MobileMoney)
-        telephone:
-              type: string
-              description: Numéro de téléphone associé (si type = MobileMoney)
-        solde:
-              type: number
-              description: Solde du compte
-              example: 1500000
-        devise:
-          type: string
-          default: MGA
-        dateSituation:
-              type: string
-              format: date
-              description: Date de la situation de trésorerie
-      required:
-            - typeCompte
-            - titulaire
-            - solde
-            - devise
-            - dateSituation
-
-    CollectiviteTresorerie:
-            type: object
-            properties:
-                collectiviteId:
-                  type: integer
-                  description: Identifiant de la collectivité
-                comptes:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Compte'
-            required:
-                - collectiviteId
-                - comptes
-            example:
-              collectiviteId: 101
-              comptes:
-                - typeCompte: Caisse
-                  titulaire: "Trésorier Collectivité Antananarivo"
-                  solde: 500000
-                  devise: MGA
-                  dateSituation: "2026-04-20"
-                - typeCompte: Bancaire
-                  titulaire: "Collectivité Antananarivo"
-                  banque: BOA
-                  numeroCompte: "12345012345012345678901"
-                  solde: 2000000
-                  devise: MGA
-                  dateSituation: "2026-04-20"
-                - typeCompte: MobileMoney
-                  titulaire: "Collectivité Antananarivo"
-                  serviceMobileMoney: Mvola
-                  telephone: "+261341234567"
-                  solde: 750000
-                  devise: MGA
-                  dateSituation: "2026-04-20"
-
-    Activite:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Identifiant unique de l’activité
-        titre:
-          type: string
-          description: Nom ou thème de l’activité
-        typeActivite:
-          type: string
-          enum: [Obligatoire, Exceptionnelle, Federation]
-          description: Type de l’activité
-        description:
-          type: string
-          description: Détails de l’activité
-          date:
-            type: string
-            format: date
-            description: Date prévue de l’activité
-          recurrence:
-            type: string
-            description:
-              Règle de récurrence (ex: deuxième dimanche du mois)
-          publicCible:
-            type: string
-            enum: [ Tous, Juniors, Collectivites ]
-            description: Membres concernés par l’activité
-          obligatoire:
-              type: boolean
-              description: Indique si la présence est obligatoire
-          required:
-              - titre
-              - typeActivite
-              - date
-              - obligatoire
-      example:
-        id: 1
-        titre: "Assemblée générale mensuelle"
-        typeActivite: Obligatoire
-        description: "Réunion mensuelle de tous les membres"
-        date: "2026-05-10"
-        recurrence: "Deuxième dimanche de chaque mois"
-        publicCible: Tous
-        obligatoire: true
-
-    Presence:
-      type: object
-      properties:
-        activiteId:
-          type: integer
-          description: Identifiant de l’activité concernée
-        membreId:
-          type: integer
-          description: Identifiant du membre
-        statutPresence:
-          type: string
-          enum: [ Present, Absent, Excuse ]
-          description: Statut de présence du membre
-        motifAbsence:
-            type: string
-            description: Motif d’absence (si Excuse)
-        collectivitéOrigine:
-            type: integer
-            description: Identifiant de la collectivité d’origine du membre
-        collectivitéInvitee:
-              type: integer
-              description: Identifiant de la collectivité où le membre assiste (si invité)
-        comptabiliseAssiduite:
-              type: boolean
-              description: Indique si la présence compte dans le taux d’assiduité annuel
-      required:
-        - activiteId
-        - membreId
-        - statutPresence
-        - collectivitéOrigine
-        - comptabiliseAssiduite
-      example:
-        activiteId: 10
-        membreId: 45
-        statutPresence: Excuse
-        motifAbsence: "Maladie"
-        collectivitéOrigine: 101
-        collectivitéInvitee: null
-        comptabiliseAssiduite: true
-
-    StatistiquesCollectivite:
-      type: object
-      properties:
-        collectiviteId:
-          type: integer
-          description: Identifiant de la collectivité
-        moisRapport:
-          type: string
-          format: date
-          description: Mois concerné par le rapport
-        tauxAssiduiteGlobal:
-          type: number
-          format: float
-          description: Taux d’assiduité global de la collectivité (%)
-        nombreMembresActifs:
-          type: integer
-          description: Nombre de membres actifs (non démissionnaires)
-        membresStatistiques:
               type: array
               items:
-                $ref: '#/components/schemas/StatistiquesMembre'
-      required:
-        - collectiviteId
-        - moisRapport
-        - tauxAssiduiteGlobal
-        - nombreMembresActifs
-
-    StatistiquesMembre:
-        type: object
-        properties:
-          membreId:
-            type: integer
-            description: Identifiant du membre
-          nomPrenoms:
-            type: string
-          tauxAssiduite:
-            tauxAssiduite:
-              type: number
-              format: float
-              description: Taux d’assiduité du membre sur la période (%)
-              montantEncaisse:
-                type: number
-                description: Montant total versé par le membre sur la période
-              montantImpayes:
-                type: number
-                description: Montant des cotisations non réglées sur la période
-              required:
-                - membreId
-                - tauxAssiduite
-                - montantEncaisse
-                - montantImpayes
-
-        collectiviteId: 101
-        moisRapport: "2026-04-01"
-        tauxAssiduiteGlobal: 82.5
-        nombreMembresActifs: 120
-        membresStatistiques:
-          - membreId: 45
-            nomPrenoms: "Rakoto Jean"
-            tauxAssiduite: 90.0
-            montantEncaisse: 20000
-            montantImpayes: 0
-          - membreId: 46
-            nomPrenoms: "Rasoa Marie"
-            tauxAssiduite: 70.0
-            montantEncaisse: 15000
-            montantImpayes: 5000
+                $ref: '#/components/schemas/CreateCollectivity'
+      responses:
+        201:
+          description: List of created collectivities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collectivity'
+        400:
+          description: Collectivity without federation approval or structure missing.
+        404:
+          description: Member not found.
+  '/members':
+    post:
+      summary: Create list of members
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateMember'
+      responses:
+        201:
+          description: List of created members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        400:
+          description: |
+            The following case must return a bad request exception : 
+            - Member with bad referees or without proper payment.
+            - Membership dues not paid or registration fee not paid.
+        404:
+          description: Either collectivity or member not found.
+components:
+  schemas:
+    CreateCollectivity:
+      type: object
+      properties:
+        location:
+          type: string
+        members:
+          type: array
+          items:
+            schema:
+              $ref: '#/components/schemas/MemberIdentifier'
+        federationApproval:
+          type: boolean
+        structure:
+          $ref: '#/components/schemas/CreateCollectivityStructure'
+    CreateCollectivityStructure:
+      type: object
+      properties:
+        president:
+          $ref: '#/components/schemas/MemberIdentifier'
+        vicePresident:
+          $ref: '#/components/schemas/MemberIdentifier'
+        treasurer:
+          $ref: '#/components/schemas/MemberIdentifier'
+        secretary:
+          $ref: '#/components/schemas/MemberIdentifier'
+    CollectivityStructure:
+      type: object
+      properties:
+        president:
+          $ref: '#/components/schemas/Member'
+        vicePresident:
+          $ref: '#/components/schemas/Member'
+        treasurer:
+          $ref: '#/components/schemas/Member'
+        secretary:
+          $ref: '#/components/schemas/Member'
+    Collectivity:
+      type: object
+      properties:
+        id:
+          type: string
+        location:
+          type: string
+        structure:
+          $ref: '#/components/schemas/CollectivityStructure'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+    MemberIdentifier:
+      type: string
+    CreateMember:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/MemberInformation'
+      properties:
+        collectivityIdentifier:
+          type: string
+        referees:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberIdentifier'
+        registrationFeePaid:
+          type: boolean
+        membershipDuesPaid:
+          type: boolean
+    MemberInformation:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/Gender'
+        address:
+          type: string
+        profession:
+          type: string
+        phoneNumber:
+          type: int
+        email:
+          type: string
+        occupation:
+          $ref: '#/components/schemas/MemberOccupation'
+    Member:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/MemberInformation'
+      properties:
+        id:
+          $ref: '#/components/schemas/MemberIdentifier'
+        referees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+    Gender:
+      type: string
+      enum:
+        - MALE
+        - FEMALE
+    MemberOccupation:
+      type: string
+      enum:
+        - JUNIOR
+        - SENIOR
+        - SECRETARY
+        - TREASURER
+        - VICE_PRESIDENT
+        - PRESIDENT
