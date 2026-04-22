@@ -1,5 +1,8 @@
 package tsutsu.examfinal.Entity;
 
+import lombok.Builder;
+
+@Builder
 public class CollectivityStructureEntity {
     MembreEntity president;
     MembreEntity vice_president;
