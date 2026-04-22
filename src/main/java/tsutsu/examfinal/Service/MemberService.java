@@ -3,6 +3,7 @@ package tsutsu.examfinal.Service;
 
 import org.springframework.stereotype.Service;
 import tsutsu.examfinal.DTO.CreateMemberDTO;
+import tsutsu.examfinal.Entity.CollectivityEntity;
 import tsutsu.examfinal.Entity.MemberOccupationEntity;
 import tsutsu.examfinal.Entity.MembreEntity;
 import tsutsu.examfinal.Repository.CollectivityRepository;
@@ -101,7 +102,11 @@ public class MemberService {
                     .email(dto.getEmail())
                     .Occupation(dto.getOccupation())
                     .membershipDate(LocalDate.now())
-                    .collectivity(targetCollectivityId)
+                    .collectivity(
+                            CollectivityEntity.builder()
+                                    .id(targetCollectivityId)
+                                    .build()
+                    )
                     .build();
 
             String newId = memberRepository.save(member);

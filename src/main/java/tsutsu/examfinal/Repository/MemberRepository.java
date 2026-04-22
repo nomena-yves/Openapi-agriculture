@@ -1,6 +1,7 @@
 package tsutsu.examfinal.Repository;
 
 import org.springframework.stereotype.Repository;
+import tsutsu.examfinal.Entity.CollectivityEntity;
 import tsutsu.examfinal.Entity.GenderEntity;
 import tsutsu.examfinal.Entity.MemberOccupationEntity;
 import tsutsu.examfinal.Entity.MembreEntity;
@@ -219,7 +220,11 @@ public class MemberRepository {
                 .email(rs.getString("email"))
                 .Occupation(MemberOccupationEntity.valueOf(rs.getString("occupation")))
                 .membershipDate(rs.getDate("membership_date").toLocalDate())
-                .collectivity(rs.getString("collectivity_id"))
+                .collectivity(
+                        CollectivityEntity.builder()
+                                .id(rs.getString("collectivity_id"))
+                                .build()
+                )
                 .build();
     }
 }

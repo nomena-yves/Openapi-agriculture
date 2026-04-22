@@ -77,6 +77,8 @@ public class CollectivityService {
                     .orElseThrow(() -> new NotFoundException("Vice-president not found: " + vicePresidentId));
             MembreEntity treasurer     = memberRepository.findById(treasurerId)
                     .orElseThrow(() -> new NotFoundException("Treasurer not found: " + treasurerId));
+            MembreEntity secretary = memberRepository.findById(secretaryId)
+                    .orElseThrow(() -> new NotFoundException("Secretary not found: " + secretaryId));
             List<String> structureIds = List.of(presidentId, vicePresidentId, treasurerId, secretaryId);
             for (String sid : structureIds) {
                 if (!memberIds.contains(sid)) {
