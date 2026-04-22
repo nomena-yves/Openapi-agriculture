@@ -55,3 +55,29 @@ CREATE INDEX idx_members_collectivity ON members(collectivity_id);
 CREATE INDEX idx_members_email        ON members(email);
 CREATE INDEX idx_members_occupation   ON members(occupation);
 CREATE INDEX idx_member_referees_member ON member_referees(member_id);
+
+CREATE TABLE membership_fee (
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                eligible_from DATE NOT NULL,
+                                frequency VARCHAR(20) NOT NULL,
+                                amount DOUBLE PRECISION NOT NULL,
+                                label VARCHAR(255),
+                                status VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE member_payment (
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                amount INTEGER NOT NULL,
+                                payment_mode VARCHAR(30) NOT NULL,
+                                account_credited_id UUID,
+                                creation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+
+                                membership_fee_id UUID,
+                                member_id UUID,
+
+                                CONSTRAINT fk_payment_member
+                                    FOREIGN KEY (member_id) REFERENCES members(id),
+
+                                CONSTRAINT fk_payment_fee
+                                    FOREIGN KEY (membership_fee_id) REFERENCES membership_fee(id)
+);
