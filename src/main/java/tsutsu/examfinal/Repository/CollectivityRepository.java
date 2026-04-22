@@ -1,7 +1,7 @@
 package tsutsu.examfinal.Repository;
 
 
-import lombok.AllArgsConstructor;
+
 import org.springframework.stereotype.Repository;
 import tsutsu.examfinal.config.DatabaseConfig;
 

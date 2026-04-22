@@ -1,4 +1,4 @@
-package mg.federation.api.service;
+package tsutsu.examfinal.Service;
 
 
 import org.springframework.stereotype.Service;
@@ -73,7 +73,7 @@ public class MemberService {
 
             String targetCollectivityId = dto.getCollectivityIdentifier();
             long fromTarget = referees.stream()
-                    .filter(r -> targetCollectivityId.equals(r.getCollectivityId()))
+                    .filter(r -> targetCollectivityId.equals(r.getCollectivity()))
                     .count();
             long fromOther = referees.size() - fromTarget;
 
