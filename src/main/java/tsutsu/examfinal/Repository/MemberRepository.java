@@ -39,11 +39,11 @@ public class MemberRepository {
             ps.setString(4, member.getGender().name());
             ps.setString(5, member.getAdress());
             ps.setString(6, member.getProfession());
-            ps.setLong(7, member.getPhoneNumber());
+            ps.setLong(7, Long.parseLong(member.getPhoneNumber()));
             ps.setString(8, member.getEmail());
             ps.setString(9, member.getOccupation().name());
             ps.setDate(10, Date.valueOf(member.getMembershipDate()));
-            ps.setString(11, member.getCollectivity());
+            ps.setString(11, String.valueOf(member.getCollectivity()));
 
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -213,13 +213,13 @@ public class MemberRepository {
                 .lastName(rs.getString("last_name"))
                 .birthDate(rs.getDate("birth_date").toLocalDate())
                 .gender(GenderEntity.valueOf(rs.getString("gender")))
-                .address(rs.getString("address"))
+                .adress(rs.getString("address"))
                 .profession(rs.getString("profession"))
-                .phoneNumber(rs.getLong("phone_number"))
+                .phoneNumber(String.valueOf(rs.getLong("phone_number")))
                 .email(rs.getString("email"))
-                .occupation(MemberOccupationEntity.valueOf(rs.getString("occupation")))
+                .Occupation(MemberOccupationEntity.valueOf(rs.getString("occupation")))
                 .membershipDate(rs.getDate("membership_date").toLocalDate())
-                .collectivityId(rs.getString("collectivity_id"))
+                .collectivity(rs.getString("collectivity_id"))
                 .build();
     }
 }

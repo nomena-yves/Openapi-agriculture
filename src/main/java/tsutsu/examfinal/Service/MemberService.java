@@ -1,236 +1,119 @@
-package tsutsu.examfinal.Service;
+package mg.federation.api.service;
 
 
-import org.springframework.stereotype.Repository;
-import tsutsu.examfinal.Entity.GenderEntity;
+import org.springframework.stereotype.Service;
+import tsutsu.examfinal.DTO.CreateMemberDTO;
 import tsutsu.examfinal.Entity.MemberOccupationEntity;
 import tsutsu.examfinal.Entity.MembreEntity;
-import tsutsu.examfinal.config.DatabaseConfig;
+import tsutsu.examfinal.Repository.CollectivityRepository;
+import tsutsu.examfinal.Repository.MemberRepository;
+import tsutsu.examfinal.exception.BadRequestException;
+import tsutsu.examfinal.exception.NotFoundException;
 
-import java.sql.*;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+@Service
+public class MemberService {
 
-@Repository
-public class MemberRepository {
+    private final MemberRepository memberRepository;
+    private final CollectivityRepository collectivityRepository;
 
-    private final DatabaseConfig db;
-
-    public MemberRepository(DatabaseConfig db) {
-        this.db = db;
+    public MemberService(MemberRepository memberRepository,
+                         CollectivityRepository collectivityRepository) {
+        this.memberRepository = memberRepository;
+        this.collectivityRepository = collectivityRepository;
     }
 
-    public String save(MembreEntity member) throws SQLException {
-        String sql = """
-                INSERT INTO members
-                    (first_name, last_name, birth_date, gender, address,
-                     profession, phone_number, email, occupation,
-                     membership_date, collectivity_id)
-                VALUES (?, ?, ?, ?::gender_type, ?, ?, ?, ?, ?::occupation_type, ?, ?::uuid)
-                RETURNING id
-                """;
+    public List<MembreEntity> createMembers(List<CreateMemberDTO> dtos) {
+        List<MembreEntity> created = new ArrayList<>();
 
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, member.getFirstName());
-            ps.setString(2, member.getLastName());
-            ps.setDate(3, Date.valueOf(member.getBirthDate()));
-            ps.setString(4, member.getGender().name());
-            ps.setString(5, member.getAdress());
-            ps.setString(6, member.getProfession());
-            ps.setLong(7, Long.parseLong(member.getPhoneNumber()));
-            ps.setString(8, member.getEmail());
-            ps.setString(9, member.getOccupation().name());
-            ps.setDate(10, Date.valueOf(member.getMembershipDate()));
-            ps.setString(11, String.valueOf(member.getCollectivity()));
-
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getString("id");
-            }
+        for (CreateMemberDTO dto : dtos) {
+            created.add(createSingleMember(dto));
         }
+
+        return created;
     }
-    public void saveReferees(String memberId, List<String> refereeIds) throws SQLException {
-        String sql = "INSERT INTO member_referees (member_id, referee_id) VALUES (?::uuid, ?::uuid)";
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            for (String refereeId : refereeIds) {
-                ps.setString(1, memberId);
-                ps.setString(2, refereeId);
-                ps.addBatch();
+    private MembreEntity createSingleMember(CreateMemberDTO dto) {
+        try {
+            if (!collectivityRepository.existsById(dto.getCollectivityIdentifier())) {
+                throw new NotFoundException(
+                        "Collectivity not found: " + dto.getCollectivityIdentifier());
             }
-            ps.executeBatch();
+            if (dto.getRegistrationFeePaid() == null || !dto.getRegistrationFeePaid()) {
+                throw new BadRequestException(
+                        "Registration fee (50 000 MGA) must be paid.");
+            }
+            if (dto.getMembershipDuesPaid() == null || !dto.getMembershipDuesPaid()) {
+                throw new BadRequestException(
+                        "Membership dues must be paid before joining.");
+            }
+            List<String> refereeIds = dto.getReferees();
+            List<MembreEntity> referees = memberRepository.findByIds(refereeIds);
+
+            if (referees.size() != refereeIds.size()) {
+                throw new NotFoundException(
+                        "One or more referees not found.");
+            }
+            boolean allSenior = referees.stream()
+                    .allMatch(r -> r.getOccupation() == MemberOccupationEntity.SENIOR);
+            if (!allSenior) {
+                throw new BadRequestException(
+                        "All referees must be confirmed members (SENIOR occupation).");
+            }
+            LocalDate ninetyDaysAgo = LocalDate.now().minusDays(90);
+            boolean allAncient = referees.stream()
+                    .allMatch(r -> r.getMembershipDate().isBefore(ninetyDaysAgo));
+            if (!allAncient) {
+                throw new BadRequestException(
+                        "All referees must have more than 90 days of membership.");
+            }
+
+            String targetCollectivityId = dto.getCollectivityIdentifier();
+            long fromTarget = referees.stream()
+                    .filter(r -> targetCollectivityId.equals(r.getCollectivityId()))
+                    .count();
+            long fromOther = referees.size() - fromTarget;
+
+            if (fromTarget < fromOther) {
+                throw new BadRequestException(
+                        "The number of referees from the target collectivity (" + fromTarget +
+                                ") must be >= the number from other collectivities (" + fromOther + ").");
+            }
+
+
+            if (memberRepository.findByEmail(dto.getEmail()).isPresent()) {
+                throw new BadRequestException(
+                        "Email already exists: " + dto.getEmail());
+            }
+
+
+            MembreEntity member = MembreEntity.builder()
+                    .firstName(dto.getFirstName())
+                    .lastName(dto.getLastName())
+                    .birthDate(dto.getBirthDate())
+                    .gender(dto.getGender())
+                    .adress(dto.getAddress())
+                    .profession(dto.getProfession())
+                    .phoneNumber(String.valueOf(dto.getPhoneNumber()))
+                    .email(dto.getEmail())
+                    .Occupation(dto.getOccupation())
+                    .membershipDate(LocalDate.now())
+                    .collectivity(targetCollectivityId)
+                    .build();
+
+            String newId = memberRepository.save(member);
+            member.setId(newId);
+
+            memberRepository.saveReferees(newId, refereeIds);
+            member.setReferees(referees);
+
+            return member;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error: " + e.getMessage(), e);
         }
-    }
-    public Optional<MembreEntity> findById(String id) throws SQLException {
-        String sql = """
-                SELECT id, first_name, last_name, birth_date, gender, address,
-                       profession, phone_number, email, occupation,
-                       membership_date, collectivity_id
-                FROM members
-                WHERE id = ?::uuid
-                """;
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
-                }
-                return Optional.empty();
-            }
-        }
-    }
-
-
-    public List<MembreEntity> findByIds(List<String> ids) throws SQLException {
-        if (ids == null || ids.isEmpty()) return List.of();
-
-
-        String placeholders = ids.stream()
-                .map(i -> "?::uuid")
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("?::uuid");
-
-        String sql = String.format("""
-                SELECT id, first_name, last_name, birth_date, gender, address,
-                       profession, phone_number, email, occupation,
-                       membership_date, collectivity_id
-                FROM members
-                WHERE id IN (%s)
-                """, placeholders);
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            for (int i = 0; i < ids.size(); i++) {
-                ps.setString(i + 1, ids.get(i));
-            }
-
-            List<MembreEntity> result = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapRow(rs));
-                }
-            }
-            return result;
-        }
-    }
-
-
-    public Optional<MembreEntity> findByEmail(String email) throws SQLException {
-        String sql = """
-                SELECT id, first_name, last_name, birth_date, gender, address,
-                       profession, phone_number, email, occupation,
-                       membership_date, collectivity_id
-                FROM members
-                WHERE email = ?
-                """;
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
-                }
-                return Optional.empty();
-            }
-        }
-    }
-
-
-
-    public List<MembreEntity> findRefereesByMemberId(String memberId) throws SQLException {
-        String sql = """
-                SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender,
-                       m.address, m.profession, m.phone_number, m.email,
-                       m.occupation, m.membership_date, m.collectivity_id
-                FROM members m
-                INNER JOIN member_referees mr ON mr.referee_id = m.id
-                WHERE mr.member_id = ?::uuid
-                """;
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, memberId);
-
-            List<MembreEntity> result = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapRow(rs));
-                }
-            }
-            return result;
-        }
-    }
-
-
-
-    public List<MembreEntity> findByCollectivityId(String collectivityId) throws SQLException {
-        String sql = """
-                SELECT id, first_name, last_name, birth_date, gender, address,
-                       profession, phone_number, email, occupation,
-                       membership_date, collectivity_id
-                FROM members
-                WHERE collectivity_id = ?::uuid
-                """;
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, collectivityId);
-
-            List<MembreEntity> result = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapRow(rs));
-                }
-            }
-            return result;
-        }
-    }
-
-
-
-    public boolean existsById(String id) throws SQLException {
-        String sql = "SELECT 1 FROM members WHERE id = ?::uuid";
-
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private MembreEntity mapRow(ResultSet rs) throws SQLException {
-        return MembreEntity.builder()
-                .id(rs.getString("id"))
-                .firstName(rs.getString("first_name"))
-                .lastName(rs.getString("last_name"))
-                .birthDate(rs.getDate("birth_date").toLocalDate())
-                .gender(GenderEntity.FEMALE.valueOf(rs.getString("gender")))
-                .Adress(rs.getString("address"))
-                .profession(rs.getString("profession"))
-                .phoneNumber(rs.getLong("phone_number"))
-                .email(rs.getString("email"))
-                .occupation(MemberOccupationEntity.valueOf(rs.getString("occupation")))
-                .membershipDate(rs.getDate("membership_date").toLocalDate())
-                .collectivityId(rs.getString("collectivity_id"))
-                .build();
     }
 }
