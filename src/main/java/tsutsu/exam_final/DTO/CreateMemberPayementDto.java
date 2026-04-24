@@ -1,15 +1,16 @@
 package tsutsu.exam_final.DTO;
 
 
+import tsutsu.exam_final.Entity.PaymentMode;
 
-public class CreateMemberPaymentDto {
+public class CreateMemberPayementDto {
 
     private Integer amount;
     private String membershipFeeIdentifier;
     private String accountCreditedIdentifier;
     private PaymentMode paymentMode;
 
-    public CreateMemberPaymentDto() {}
+    public CreateMemberPayementDto() {}
 
     public Integer getAmount() { return amount; }
     public void setAmount(Integer amount) { this.amount = amount; }

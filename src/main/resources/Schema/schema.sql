@@ -1,229 +1,127 @@
 -- ============================================================
--- SCHEMA BASE DE DONNÉES - Fédération de collectivités agricoles
--- Version : 0.0.3
+-- TYPES (SAFE)
 -- ============================================================
 
--- Nettoyage
-DROP TABLE IF EXISTS collectivity_transactions   CASCADE;
-DROP TABLE IF EXISTS member_payments             CASCADE;
-DROP TABLE IF EXISTS membership_fees             CASCADE;
-DROP TABLE IF EXISTS financial_accounts          CASCADE;
-DROP TABLE IF EXISTS member_referees             CASCADE;
-DROP TABLE IF EXISTS members                     CASCADE;
-DROP TABLE IF EXISTS collectivities              CASCADE;
+DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender_type') THEN
+            CREATE TYPE gender_type AS ENUM ('MALE','FEMALE');
+        END IF;
 
-DROP TYPE IF EXISTS gender_type                  CASCADE;
-DROP TYPE IF EXISTS occupation_type              CASCADE;
-DROP TYPE IF EXISTS frequency_type               CASCADE;
-DROP TYPE IF EXISTS activity_status_type         CASCADE;
-DROP TYPE IF EXISTS payment_mode_type            CASCADE;
-DROP TYPE IF EXISTS account_type                 CASCADE;
-DROP TYPE IF EXISTS mobile_banking_service_type  CASCADE;
-DROP TYPE IF EXISTS bank_type                    CASCADE;
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'occupation_type') THEN
+            CREATE TYPE occupation_type AS ENUM (
+                'JUNIOR','SENIOR','SECRETARY','TREASURER','VICE_PRESIDENT','PRESIDENT'
+                );
+        END IF;
 
--- ============================================================
--- TYPES ÉNUMÉRÉS
--- ============================================================
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'frequency_type') THEN
+            CREATE TYPE frequency_type AS ENUM (
+                'WEEKLY','MONTHLY','ANNUALLY','PUNCTUALLY'
+                );
+        END IF;
 
-CREATE TYPE gender_type AS ENUM (
-    'MALE',
-    'FEMALE'
-);
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_status_type') THEN
+            CREATE TYPE activity_status_type AS ENUM ('ACTIVE','INACTIVE');
+        END IF;
 
-CREATE TYPE occupation_type AS ENUM (
-    'JUNIOR',
-    'SENIOR',
-    'SECRETARY',
-    'TREASURER',
-    'VICE_PRESIDENT',
-    'PRESIDENT'
-);
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_mode_type') THEN
+            CREATE TYPE payment_mode_type AS ENUM ('CASH','MOBILE_BANKING','BANK_TRANSFER');
+        END IF;
 
-CREATE TYPE frequency_type AS ENUM (
-    'WEEKLY',
-    'MONTHLY',
-    'ANNUALLY',
-    'PUNCTUALLY'
-);
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_type') THEN
+            CREATE TYPE account_type AS ENUM ('CASH','MOBILE_BANKING','BANK');
+        END IF;
 
-CREATE TYPE activity_status_type AS ENUM (
-    'ACTIVE',
-    'INACTIVE'
-);
-
-CREATE TYPE payment_mode_type AS ENUM (
-    'CASH',
-    'MOBILE_BANKING',
-    'BANK_TRANSFER'
-);
-
-CREATE TYPE account_type AS ENUM (
-    'CASH',
-    'MOBILE_BANKING',
-    'BANK'
-);
-
-CREATE TYPE mobile_banking_service_type AS ENUM (
-    'AIRTEL_MONEY',
-    'MVOLA',
-    'ORANGE_MONEY'
-);
-
-CREATE TYPE bank_type AS ENUM (
-    'BRED',
-    'MCB',
-    'BMOI',
-    'BOA',
-    'BGFI',
-    'AFG',
-    'ACCES_BAQUE',
-    'BAOBAB',
-    'SIPEM'
-);
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'mobile_banking_service_type') THEN
+            CREATE TYPE mobile_banking_service_type AS ENUM ('AIRTEL_MONEY','MVOLA','ORANGE_MONEY');
+        END IF;
+    END$$;
 
 -- ============================================================
--- TABLE : collectivities
+-- TABLES (SAFE)
 -- ============================================================
 
-CREATE TABLE collectivities (
-                                id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-                                number            VARCHAR(50)  UNIQUE,
-                                name              VARCHAR(255) UNIQUE,
-                                location          VARCHAR(255) NOT NULL,
-                                president_id      UUID,
-                                vice_president_id UUID,
-                                treasurer_id      UUID,
-                                secretary_id      UUID,
-                                created_at        TIMESTAMP    NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS collectivities (
+                                              id VARCHAR(50) PRIMARY KEY,
+                                              number VARCHAR(50),
+                                              name VARCHAR(255),
+                                              location VARCHAR(255),
+                                              specialization VARCHAR(100)
 );
 
--- ============================================================
--- TABLE : members
--- ============================================================
-
-CREATE TABLE members (
-                         id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-                         first_name      VARCHAR(100)    NOT NULL,
-                         last_name       VARCHAR(100)    NOT NULL,
-                         birth_date      DATE            NOT NULL,
-                         gender          gender_type     NOT NULL,
-                         address         TEXT            NOT NULL,
-                         profession      VARCHAR(255)    NOT NULL,
-                         phone_number    BIGINT          NOT NULL,
-                         email           VARCHAR(255)    NOT NULL UNIQUE,
-                         occupation      occupation_type NOT NULL DEFAULT 'JUNIOR',
-                         membership_date DATE            NOT NULL DEFAULT CURRENT_DATE,
-                         collectivity_id UUID            REFERENCES collectivities(id) ON DELETE SET NULL,
-                         created_at      TIMESTAMP       NOT NULL DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS members (
+                                       id VARCHAR(50) PRIMARY KEY,
+                                       first_name VARCHAR(100),
+                                       last_name VARCHAR(100),
+                                       birth_date DATE,
+                                       gender gender_type,
+                                       address TEXT,
+                                       profession VARCHAR(255),
+                                       phone_number BIGINT,
+                                       email VARCHAR(255)
 );
 
--- FK structure collectivité -> members
-ALTER TABLE collectivities
-    ADD CONSTRAINT fk_president
-        FOREIGN KEY (president_id)      REFERENCES members(id) ON DELETE SET NULL,
-    ADD CONSTRAINT fk_vice_president
-        FOREIGN KEY (vice_president_id) REFERENCES members(id) ON DELETE SET NULL,
-    ADD CONSTRAINT fk_treasurer
-        FOREIGN KEY (treasurer_id)      REFERENCES members(id) ON DELETE SET NULL,
-    ADD CONSTRAINT fk_secretary
-        FOREIGN KEY (secretary_id)      REFERENCES members(id) ON DELETE SET NULL;
+CREATE TABLE IF NOT EXISTS member_collectivities (
+                                                     member_id VARCHAR(50),
+                                                     collectivity_id VARCHAR(50),
+                                                     occupation occupation_type,
+                                                     PRIMARY KEY(member_id, collectivity_id)
+);
 
--- ============================================================
--- TABLE : member_referees
--- ============================================================
+CREATE TABLE IF NOT EXISTS financial_accounts (
+                                                  id VARCHAR(50) PRIMARY KEY,
+                                                  account_type account_type,
+                                                  amount NUMERIC(15,2),
+                                                  collectivity_id VARCHAR(50),
+                                                  mobile_service mobile_banking_service_type,
+                                                  mobile_number BIGINT
+);
 
-CREATE TABLE member_referees (
-                                 member_id  UUID        NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-                                 referee_id UUID        NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-                                 relation   VARCHAR(100),
-                                 PRIMARY KEY (member_id, referee_id),
-                                 CONSTRAINT chk_no_self_referee CHECK (member_id <> referee_id)
+CREATE TABLE IF NOT EXISTS membership_fees (
+                                               id VARCHAR(50) PRIMARY KEY,
+                                               collectivity_id VARCHAR(50),
+                                               frequency frequency_type,
+                                               amount NUMERIC(15,2)
+);
+
+CREATE TABLE IF NOT EXISTS member_payments (
+                                               id VARCHAR(50) PRIMARY KEY,
+                                               member_id VARCHAR(50),
+                                               account_id VARCHAR(50),
+                                               amount INTEGER,
+                                               payment_mode payment_mode_type
+);
+
+CREATE TABLE IF NOT EXISTS collectivity_transactions (
+                                                         id VARCHAR(50) PRIMARY KEY,
+                                                         collectivity_id VARCHAR(50),
+                                                         member_id VARCHAR(50),
+                                                         account_id VARCHAR(50),
+                                                         amount NUMERIC(15,2),
+                                                         payment_mode payment_mode_type
 );
 
 -- ============================================================
--- TABLE : financial_accounts
+-- INSERT SAFE (évite doublons)
 -- ============================================================
 
-CREATE TABLE financial_accounts (
-                                    id                  UUID                        PRIMARY KEY DEFAULT gen_random_uuid(),
-                                    account_type        account_type                NOT NULL,
-                                    amount              NUMERIC(15,2)               NOT NULL DEFAULT 0,
-                                    collectivity_id     UUID                        REFERENCES collectivities(id) ON DELETE CASCADE,
-    -- Champs MobileBankingAccount
-                                    holder_name         VARCHAR(255),
-                                    mobile_service      mobile_banking_service_type,
-                                    mobile_number       BIGINT,
-    -- Champs BankAccount
-                                    bank_name           bank_type,
-                                    bank_code           INTEGER,
-                                    bank_branch_code    INTEGER,
-                                    bank_account_number BIGINT,
-                                    bank_account_key    INTEGER,
-                                    created_at          TIMESTAMP                   NOT NULL DEFAULT NOW()
-);
+-- Collectivities
+INSERT INTO collectivities (id, number, name, location, specialization)
+VALUES
+    ('col-1','1','Mpanorina','Ambatondrazaka','Riziculture'),
+    ('col-2','2','Dobo voalohany','Ambatondrazaka','Pisciculture'),
+    ('col-3','3','Tantely mamy','Brickaville','Apiculture')
+ON CONFLICT (id) DO NOTHING;
 
--- Une seule caisse par collectivité
-CREATE UNIQUE INDEX idx_one_cash_per_collectivity
-    ON financial_accounts (collectivity_id)
-    WHERE account_type = 'CASH';
+-- Members
+INSERT INTO members (id, first_name, last_name, birth_date, gender, address, profession, phone_number, email)
+VALUES
+    ('C1-M1','Prénom1','Nom1','1980-02-01','MALE','Ambato','Riziculteur',341234567,'m1@mail'),
+    ('C1-M2','Prénom2','Nom2','1982-03-05','MALE','Ambato','Agriculteur',321234567,'m2@mail')
+ON CONFLICT (id) DO NOTHING;
 
--- ============================================================
--- TABLE : membership_fees
--- ============================================================
-
-CREATE TABLE membership_fees (
-                                 id              UUID                 PRIMARY KEY DEFAULT gen_random_uuid(),
-                                 collectivity_id UUID                 NOT NULL REFERENCES collectivities(id) ON DELETE CASCADE,
-                                 eligible_from   DATE,
-                                 frequency       frequency_type       NOT NULL,
-                                 amount          NUMERIC(15,2)        NOT NULL CHECK (amount > 0),
-                                 label           VARCHAR(255),
-                                 status          activity_status_type NOT NULL DEFAULT 'ACTIVE',
-                                 created_at      TIMESTAMP            NOT NULL DEFAULT NOW()
-);
-
--- ============================================================
--- TABLE : member_payments
--- ============================================================
-
-CREATE TABLE member_payments (
-                                 id                UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
-                                 member_id         UUID              NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-                                 membership_fee_id UUID              NOT NULL REFERENCES membership_fees(id),
-                                 account_id        UUID              NOT NULL REFERENCES financial_accounts(id),
-                                 amount            INTEGER           NOT NULL CHECK (amount > 0),
-                                 payment_mode      payment_mode_type NOT NULL,
-                                 creation_date     DATE              NOT NULL DEFAULT CURRENT_DATE,
-                                 created_at        TIMESTAMP         NOT NULL DEFAULT NOW()
-);
-
--- ============================================================
--- TABLE : collectivity_transactions
--- ============================================================
-
-CREATE TABLE collectivity_transactions (
-                                           id              UUID              PRIMARY KEY DEFAULT gen_random_uuid(),
-                                           collectivity_id UUID              NOT NULL REFERENCES collectivities(id) ON DELETE CASCADE,
-                                           member_id       UUID              NOT NULL REFERENCES members(id),
-                                           account_id      UUID              NOT NULL REFERENCES financial_accounts(id),
-                                           amount          NUMERIC(15,2)     NOT NULL,
-                                           payment_mode    payment_mode_type NOT NULL,
-                                           creation_date   DATE              NOT NULL DEFAULT CURRENT_DATE,
-                                           created_at      TIMESTAMP         NOT NULL DEFAULT NOW()
-);
-
--- ============================================================
--- INDEX
--- ============================================================
-
-CREATE INDEX idx_members_collectivity     ON members(collectivity_id);
-CREATE INDEX idx_members_email            ON members(email);
-CREATE INDEX idx_members_occupation       ON members(occupation);
-CREATE INDEX idx_members_membership_date  ON members(membership_date);
-CREATE INDEX idx_referees_member          ON member_referees(member_id);
-CREATE INDEX idx_membership_fees_coll     ON membership_fees(collectivity_id);
-CREATE INDEX idx_membership_fees_status   ON membership_fees(status);
-CREATE INDEX idx_member_payments_member   ON member_payments(member_id);
-CREATE INDEX idx_member_payments_fee      ON member_payments(membership_fee_id);
-CREATE INDEX idx_transactions_coll        ON collectivity_transactions(collectivity_id);
-CREATE INDEX idx_transactions_date        ON collectivity_transactions(creation_date);
+-- Relations
+INSERT INTO member_collectivities VALUES
+                                      ('C1-M1','col-1','PRESIDENT'),
+                                      ('C1-M2','col-1','VICE_PRESIDENT')
+ON CONFLICT DO NOTHING;

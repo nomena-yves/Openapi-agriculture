@@ -2,7 +2,7 @@ package tsutsu.exam_final.Service;
 
 
 import org.springframework.stereotype.Service;
-import tsutsu.exam_final.DTO.CreateMembershipFeeDto;
+import tsutsu.exam_final.DTO.CreateMemberShipFeeDto;
 import tsutsu.exam_final.Entity.ActivityStatus;
 import tsutsu.exam_final.Entity.MembershipFee;
 import tsutsu.exam_final.Repository.CollectivityRepository;
@@ -15,12 +15,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class MembershipFeeService {
+public class MemberShipFeeService {
 
     private final MembershipFeeRepository membershipFeeRepository;
     private final CollectivityRepository collectivityRepository;
 
-    public MembershipFeeService(MembershipFeeRepository membershipFeeRepository,
+    public MemberShipFeeService(MembershipFeeRepository membershipFeeRepository,
                                 CollectivityRepository collectivityRepository) {
         this.membershipFeeRepository = membershipFeeRepository;
         this.collectivityRepository = collectivityRepository;
@@ -42,7 +42,7 @@ public class MembershipFeeService {
     }
 
     public List<MembershipFee> create(String collectivityId,
-                                      List<CreateMembershipFeeDto> dtos) {
+                                      List<CreateMemberShipFeeDto> dtos) {
         try {
 
             if (!collectivityRepository.existsById(collectivityId)) {
@@ -51,7 +51,7 @@ public class MembershipFeeService {
 
 
             List<MembershipFee> fees = new ArrayList<>();
-            for (CreateMembershipFeeDto dto : dtos) {
+            for (CreateMemberShipFeeDto dto : dtos) {
 
 
                 if (dto.getFrequency() == null) {

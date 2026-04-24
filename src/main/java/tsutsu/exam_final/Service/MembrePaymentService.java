@@ -2,7 +2,7 @@ package tsutsu.exam_final.Service;
 
 
 import org.springframework.stereotype.Service;
-import tsutsu.exam_final.DTO.CreateMemberPaymentDto;
+import tsutsu.exam_final.DTO.CreateMemberPayementDto;
 import tsutsu.exam_final.Entity.FinancialAccount;
 import tsutsu.exam_final.Entity.MemberPayment;
 import tsutsu.exam_final.Entity.MembershipFee;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class MemberPaymentService {
+public class MembrePaymentService {
 
     private final MemberPaymentRepository memberPaymentRepository;
     private final MemberRepository memberRepository;
@@ -24,7 +24,7 @@ public class MemberPaymentService {
     private final FinancialAccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
 
-    public MemberPaymentService(MemberPaymentRepository memberPaymentRepository,
+    public MembrePaymentService(MemberPaymentRepository memberPaymentRepository,
                                 MemberRepository memberRepository,
                                 MembershipFeeRepository membershipFeeRepository,
                                 FinancialAccountRepository accountRepository,
@@ -38,7 +38,7 @@ public class MemberPaymentService {
 
 
     public List<MemberPayment> createPayments(String memberId,
-                                              List<CreateMemberPaymentDto> dtos) {
+                                              List<CreateMemberPayementDto> dtos) {
         try {
 
             MembreEntity member = memberRepository.findById(memberId)
@@ -48,7 +48,7 @@ public class MemberPaymentService {
             List<MemberPayment> result = new ArrayList<>();
             List<String> savedIds = new ArrayList<>();
 
-            for (CreateMemberPaymentDto dto : dtos) {
+            for (CreateMemberPayementDto dto : dtos) {
 
                 MembershipFee fee = membershipFeeRepository
                         .findById(dto.getMembershipFeeIdentifier())

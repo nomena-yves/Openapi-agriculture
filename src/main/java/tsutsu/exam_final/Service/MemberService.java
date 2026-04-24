@@ -103,11 +103,10 @@ public class MemberService {
                     .gender(dto.getGender())
                     .adress(dto.getAddress())
                     .profession(dto.getProfession())
-                    .phoneNumber(dto.getPhoneNumber())
+                    .phoneNumber(String.valueOf(dto.getPhoneNumber()))
                     .email(dto.getEmail())
-                    .occupation(dto.getOccupation())
+                    .Occupation(dto.getOccupation())
                     .membershipDate(LocalDate.now())
-                    .collectivityId(targetCollectivityId)
                     .build();
 
             String newId = memberRepository.save(member);

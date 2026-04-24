@@ -2,6 +2,8 @@ package tsutsu.exam_final.Repository;
 
 
 import org.springframework.stereotype.Repository;
+import tsutsu.exam_final.Entity.GenderEntity;
+import tsutsu.exam_final.Entity.MemberOccupationEntity;
 import tsutsu.exam_final.Entity.MembreEntity;
 import tsutsu.exam_final.config.DatabaseConfig;
 
@@ -36,13 +38,13 @@ public class MemberRepository {
             ps.setString(2, member.getLastName());
             ps.setDate(3, Date.valueOf(member.getBirthDate()));
             ps.setString(4, member.getGender().name());
-            ps.setString(5, member.getAddress());
+            ps.setString(5, member.getAdress());
             ps.setString(6, member.getProfession());
-            ps.setLong(7, member.getPhoneNumber());
+            ps.setLong(7, Long.parseLong(member.getPhoneNumber()));
             ps.setString(8, member.getEmail());
             ps.setString(9, member.getOccupation().name());
             ps.setDate(10, Date.valueOf(member.getMembershipDate()));
-            ps.setString(11, member.getCollectivityId());
+            ps.setString(11, String.valueOf(member.getCollectivity()));
 
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -66,7 +68,7 @@ public class MemberRepository {
         }
     }
 
-    public Optional<Member> findById(String id) throws SQLException {
+    public Optional<MembreEntity> findById(String id) throws SQLException {
         String sql = """
                 SELECT id, first_name, last_name, birth_date, gender, address,
                        profession, phone_number, email, occupation,
@@ -112,7 +114,7 @@ public class MemberRepository {
                 ps.setString(i + 1, ids.get(i));
             }
 
-            List<Member> result = new ArrayList<>();
+            List<MembreEntity> result = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     result.add(mapRow(rs));
@@ -123,7 +125,7 @@ public class MemberRepository {
     }
 
 
-    public Optional<Member> findByEmail(String email) throws SQLException {
+    public Optional<MembreEntity> findByEmail(String email) throws SQLException {
         String sql = """
                 SELECT id, first_name, last_name, birth_date, gender, address,
                        profession, phone_number, email, occupation,
@@ -147,7 +149,7 @@ public class MemberRepository {
     }
 
 
-    public List<Member> findRefereesByMemberId(String memberId) throws SQLException {
+    public List<MembreEntity> findRefereesByMemberId(String memberId) throws SQLException {
         String sql = """
                 SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender,
                        m.address, m.profession, m.phone_number, m.email,
@@ -162,7 +164,7 @@ public class MemberRepository {
 
             ps.setString(1, memberId);
 
-            List<Member> result = new ArrayList<>();
+            List<MembreEntity> result = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     result.add(mapRow(rs));
@@ -187,7 +189,7 @@ public class MemberRepository {
 
             ps.setString(1, collectivityId);
 
-            List<Member> result = new ArrayList<>();
+            List<MembreEntity> result = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     result.add(mapRow(rs));
@@ -212,20 +214,20 @@ public class MemberRepository {
     }
 
 
-    private Member mapRow(ResultSet rs) throws SQLException {
-        return Member.builder()
+    private MembreEntity mapRow(ResultSet rs) throws SQLException {
+        return MembreEntity.builder()
                 .id(rs.getString("id"))
                 .firstName(rs.getString("first_name"))
                 .lastName(rs.getString("last_name"))
                 .birthDate(rs.getDate("birth_date").toLocalDate())
-                .gender(Gender.valueOf(rs.getString("gender")))
-                .address(rs.getString("address"))
+                .gender(GenderEntity.valueOf(rs.getString("gender")))
+                .adress(rs.getString("address"))
                 .profession(rs.getString("profession"))
-                .phoneNumber(rs.getLong("phone_number"))
+                .phoneNumber(String.valueOf(rs.getLong("phone_number")))
                 .email(rs.getString("email"))
-                .occupation(MemberOccupation.valueOf(rs.getString("occupation")))
+                .Occupation(MemberOccupationEntity.valueOf(rs.getString("occupation")))
                 .membershipDate(rs.getDate("membership_date").toLocalDate())
-                .collectivityId(rs.getString("collectivity_id"))
+//                .collectivity(rs.getString("collectivity_id"))
                 .build();
     }
 }

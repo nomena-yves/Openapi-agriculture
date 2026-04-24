@@ -8,13 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tsutsu.exam_final.DTO.AssignIdentityDto;
 import tsutsu.exam_final.DTO.CreateCollectivityDTO;
-import tsutsu.exam_final.DTO.CreateMembershipFeeDto;
+import tsutsu.exam_final.DTO.CreateMemberShipFeeDto;
 import tsutsu.exam_final.Entity.CollectivityEntity;
 import tsutsu.exam_final.Entity.CollectivityTransaction;
 import tsutsu.exam_final.Entity.FinancialAccount;
 import tsutsu.exam_final.Entity.MembershipFee;
 import tsutsu.exam_final.Service.CollectivityService;
-import tsutsu.exam_final.Service.MembershipFeeService;
+import tsutsu.exam_final.Service.FinancialAccountService;
+import tsutsu.exam_final.Service.MemberShipFeeService;
 import tsutsu.exam_final.Service.TransactionService;
 
 import java.time.LocalDate;
@@ -25,12 +26,12 @@ import java.util.List;
 public class CollectivityController {
 
     private final CollectivityService collectivityService;
-    private final MembershipFeeService membershipFeeService;
+    private final MemberShipFeeService membershipFeeService;
     private final TransactionService transactionService;
     private final FinancialAccountService financialAccountService;
 
     public CollectivityController(CollectivityService collectivityService,
-                                  MembershipFeeService membershipFeeService,
+                                  MemberShipFeeService membershipFeeService,
                                   TransactionService transactionService,
                                   FinancialAccountService financialAccountService) {
         this.collectivityService = collectivityService;
@@ -88,7 +89,7 @@ public class CollectivityController {
     @PostMapping("/{id}/membershipFees")
     public ResponseEntity<List<MembershipFee>> createMembershipFees(
             @PathVariable("id") String collectivityId,
-            @RequestBody List<CreateMembershipFeeDto> dtos) {
+            @RequestBody List<CreateMemberShipFeeDto> dtos) {
 
         List<MembershipFee> created = membershipFeeService.create(collectivityId, dtos);
         return ResponseEntity.ok(created);
