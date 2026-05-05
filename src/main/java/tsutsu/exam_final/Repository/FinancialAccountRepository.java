@@ -32,7 +32,7 @@ public class FinancialAccountRepository {
                        bank_name, bank_code, bank_branch_code,
                        bank_account_number, bank_account_key
                 FROM financial_accounts
-                WHERE collectivity_id = ?::uuid
+                WHERE collectivity_id = ?
                 ORDER BY account_type, created_at
                 """;
 
@@ -72,7 +72,7 @@ public class FinancialAccountRepository {
                 LEFT JOIN collectivity_transactions ct
                     ON ct.account_id = fa.id
                     AND ct.creation_date <= ?
-                WHERE fa.collectivity_id = ?::uuid
+                WHERE fa.collectivity_id = ?
                 GROUP BY fa.id, fa.account_type, fa.holder_name,
                          fa.mobile_service, fa.mobile_number,
                          fa.bank_name, fa.bank_code, fa.bank_branch_code,
@@ -103,7 +103,7 @@ public class FinancialAccountRepository {
                        bank_name, bank_code, bank_branch_code,
                        bank_account_number, bank_account_key
                 FROM financial_accounts
-                WHERE id = ?::uuid
+                WHERE id = ?
                 """;
 
         try (Connection conn = db.getConnection();
@@ -121,7 +121,7 @@ public class FinancialAccountRepository {
     }
 
     public boolean existsById(String id) throws SQLException {
-        String sql = "SELECT 1 FROM financial_accounts WHERE id = ?::uuid";
+        String sql = "SELECT 1 FROM financial_accounts WHERE id = ?";
 
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,7 +138,7 @@ public class FinancialAccountRepository {
         String sql = """
                 UPDATE financial_accounts
                 SET amount = amount + ?
-                WHERE id = ?::uuid
+                WHERE id = ?
                 """;
 
         try (Connection conn = db.getConnection();

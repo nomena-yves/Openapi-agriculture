@@ -16,12 +16,12 @@ public class MembreEntity {
     private String firstName;
     private String lastName;
     private GenderEntity gender;
-    private String adress;
+    private String address;
     private String profession;
     private LocalDate birthDate;
     private String email;
     private String phoneNumber;
-    private MemberOccupationEntity Occupation;
+    private MemberOccupationEntity occupation;
     private LocalDate membershipDate;
     private CollectivityEntity collectivity;
     private List<MembreEntity> referees;

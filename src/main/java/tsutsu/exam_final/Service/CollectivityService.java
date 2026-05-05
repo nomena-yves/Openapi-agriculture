@@ -1,6 +1,5 @@
 package tsutsu.exam_final.Service;
 
-
 import org.springframework.stereotype.Service;
 import tsutsu.exam_final.DTO.AssignIdentityDto;
 import tsutsu.exam_final.DTO.CreateCollectivityDTO;
@@ -29,7 +28,6 @@ public class CollectivityService {
         this.memberRepository = memberRepository;
     }
 
-
     public List<CollectivityEntity> createCollectivities(List<CreateCollectivityDTO> dtos) {
         List<CollectivityEntity> created = new ArrayList<>();
         for (CreateCollectivityDTO dto : dtos) {
@@ -37,7 +35,6 @@ public class CollectivityService {
         }
         return created;
     }
-
 
     public CollectivityEntity getById(String collectivityId) {
         try {
@@ -47,62 +44,37 @@ public class CollectivityService {
         }
     }
 
-
     public CollectivityEntity assignIdentity(String collectivityId, AssignIdentityDto dto) {
         try {
-
-            CollectivityRepository.RawCollectivity raw = collectivityRepository.findRawById(collectivityId)
+            CollectivityRepository.RawCollectivity raw = collectivityRepository
+                    .findRawById(collectivityId)
                     .orElseThrow(() -> new NotFoundException(
                             "Collectivity not found: " + collectivityId));
 
-            boolean hasNumber = dto.getNumber() != null && !dto.getNumber().isBlank();
-            boolean hasName   = dto.getName()   != null && !dto.getName().isBlank();
+            boolean hasNumber = dto.getNumber() != null;
+            boolean hasName   = dto.getName() != null && !dto.getName().isBlank();
 
             if (!hasNumber && !hasName) {
-                throw new BadRequestException(
-                        "At least one of 'number' or 'name' must be provided.");
+                throw new BadRequestException("At least one of 'number' or 'name' must be provided.");
             }
-
-
             if (hasNumber && raw.number() != null) {
-                throw new ConflictException(
-                        "The number has already been assigned to this collectivity " +
-                                "and cannot be changed.");
+                throw new ConflictException("The number has already been assigned and cannot be changed.");
             }
-
-
             if (hasName && raw.name() != null) {
-                throw new ConflictException(
-                        "The name has already been assigned to this collectivity " +
-                                "and cannot be changed.");
+                throw new ConflictException("The name has already been assigned and cannot be changed.");
             }
-
-            if (hasNumber) {
-                boolean numberExists = collectivityRepository.findByNumber(dto.getNumber()).isPresent();
-                if (numberExists) {
-                    throw new ConflictException(
-                            "The number '" + dto.getNumber() +
-                                    "' is already used by another collectivity.");
-                }
+            if (hasNumber && collectivityRepository.findByNumber(String.valueOf(dto.getNumber())).isPresent()) {
+                throw new ConflictException("The number '" + dto.getNumber() + "' is already used.");
             }
-
-
-            if (hasName) {
-                boolean nameExists = collectivityRepository.findByName(dto.getName()).isPresent();
-                if (nameExists) {
-                    throw new ConflictException(
-                            "The name '" + dto.getName() +
-                                    "' is already used by another collectivity.");
-                }
+            if (hasName && collectivityRepository.findByName(dto.getName()).isPresent()) {
+                throw new ConflictException("The name '" + dto.getName() + "' is already used.");
             }
-
 
             collectivityRepository.assignIdentity(
                     collectivityId,
-                    hasNumber ? dto.getNumber() : null,
-                    hasName   ? dto.getName()   : null
+                    hasNumber ? String.valueOf(dto.getNumber()) : null,
+                    hasName   ? dto.getName() : null
             );
-
 
             return buildCollectivityResponse(collectivityId);
 
@@ -113,82 +85,66 @@ public class CollectivityService {
 
     private CollectivityEntity createSingleCollectivity(CreateCollectivityDTO dto) {
         try {
-
             if (dto.getFederationApproval() == null || !dto.getFederationApproval()) {
-                throw new BadRequestException(
-                        "Federation approval is required to open a new collectivity.");
+                throw new BadRequestException("Federation approval is required.");
             }
-
-
             if (dto.getStructure() == null) {
-                throw new BadRequestException(
-                        "Collectivity structure (president, vicePresident, treasurer, secretary) is required.");
+                throw new BadRequestException("Collectivity structure is required.");
             }
-
 
             List<String> memberIds = dto.getMembers();
             if (memberIds == null || memberIds.size() < 10) {
                 throw new BadRequestException(
-                        "At least 10 members are required to open a collectivity. " +
-                                "Provided: " + (memberIds == null ? 0 : memberIds.size()));
+                        "At least 10 members are required. Provided: " +
+                        (memberIds == null ? 0 : memberIds.size()));
             }
-
 
             List<MembreEntity> members = memberRepository.findByIds(memberIds);
             if (members.size() != memberIds.size()) {
                 throw new NotFoundException("One or more members not found.");
             }
 
-
             java.time.LocalDate sixMonthsAgo = java.time.LocalDate.now().minusMonths(6);
             long seniorEnough = members.stream()
                     .filter(m -> m.getMembershipDate().isBefore(sixMonthsAgo))
                     .count();
-
             if (seniorEnough < 5) {
                 throw new BadRequestException(
-                        "At least 5 members must have more than 6 months of seniority. " +
-                                "Found: " + seniorEnough);
+                        "At least 5 members must have 6+ months seniority. Found: " + seniorEnough);
             }
-
 
             String presidentId     = dto.getStructure().getPresident();
             String vicePresidentId = dto.getStructure().getVicePresident();
             String treasurerId     = dto.getStructure().getTreasurer();
             String secretaryId     = dto.getStructure().getSecretary();
 
-            MembreEntity president     = memberRepository.findById(presidentId)
-                    .orElseThrow();
-            MembreEntity vicePresident = memberRepository.findById(vicePresidentId)
-                    .orElseThrow();
-            MembreEntity treasurer     = memberRepository.findById(treasurerId)
-                    .orElseThrow();
-            MembreEntity secretary     = memberRepository.findById(secretaryId)
-                    .orElseThrow();
-
             for (String sid : List.of(presidentId, vicePresidentId, treasurerId, secretaryId)) {
                 if (!memberIds.contains(sid)) {
-                    throw new BadRequestException(
-                            "Structure member " + sid + " must be included in the members list.");
+                    throw new BadRequestException("Structure member " + sid + " must be in members list.");
                 }
             }
 
+            MembreEntity president     = memberRepository.findById(presidentId).orElseThrow();
+            MembreEntity vicePresident = memberRepository.findById(vicePresidentId).orElseThrow();
+            MembreEntity treasurer     = memberRepository.findById(treasurerId).orElseThrow();
+            MembreEntity secretary     = memberRepository.findById(secretaryId).orElseThrow();
 
-            String collectivityId = collectivityRepository.save(
-                    dto.getLocation(),
-                    presidentId,
-                    vicePresidentId,
-                    treasurerId,
-                    secretaryId
-            );
+            // Créer la collectivité
+            String collectivityId = collectivityRepository.save(dto.getLocation());
 
+            // Insérer tous les membres comme JUNIOR par défaut
+            collectivityRepository.assignMembersToCollectivity(collectivityId, memberIds, "JUNIOR");
 
-            collectivityRepository.assignMembersToCollectivity(collectivityId, memberIds);
+            // Mettre à jour les occupations spécifiques
+            collectivityRepository.assignMemberWithOccupation(collectivityId, presidentId,     "PRESIDENT");
+            collectivityRepository.assignMemberWithOccupation(collectivityId, vicePresidentId, "VICE_PRESIDENT");
+            collectivityRepository.assignMemberWithOccupation(collectivityId, treasurerId,     "TREASURER");
+            collectivityRepository.assignMemberWithOccupation(collectivityId, secretaryId,     "SECRETARY");
 
             CollectivityStructureEntity structure = CollectivityStructureEntity.builder()
                     .president(president)
-                    .vice_president(vicePresident)
-                    .tresurer(treasurer)
+                    .vicePresident(vicePresident)
+                    .treasurer(treasurer)
                     .secretary(secretary)
                     .build();
 
@@ -207,19 +163,26 @@ public class CollectivityService {
     }
 
     private CollectivityEntity buildCollectivityResponse(String collectivityId) throws SQLException {
-        CollectivityRepository.RawCollectivity raw = collectivityRepository.findRawById(collectivityId)
+        CollectivityRepository.RawCollectivity raw = collectivityRepository
+                .findRawById(collectivityId)
                 .orElseThrow(() -> new NotFoundException(
                         "Collectivity not found: " + collectivityId));
 
-        MembreEntity president     = fetchMemberOrThrow(raw.presidentId());
-        MembreEntity vicePresident = fetchMemberOrThrow(raw.vicePresidentId());
-        MembreEntity treasurer     = fetchMemberOrThrow(raw.treasurerId());
-        MembreEntity secretary     = fetchMemberOrThrow(raw.secretaryId());
+        // Récupérer président, VP, trésorier, secrétaire via member_collectivities
+        List<String> presidentIds     = collectivityRepository.findMemberIdsByOccupation(collectivityId, "PRESIDENT");
+        List<String> vicePresidentIds = collectivityRepository.findMemberIdsByOccupation(collectivityId, "VICE_PRESIDENT");
+        List<String> treasurerIds     = collectivityRepository.findMemberIdsByOccupation(collectivityId, "TREASURER");
+        List<String> secretaryIds     = collectivityRepository.findMemberIdsByOccupation(collectivityId, "SECRETARY");
+
+        MembreEntity president     = presidentIds.isEmpty()     ? null : memberRepository.findById(presidentIds.get(0)).orElse(null);
+        MembreEntity vicePresident = vicePresidentIds.isEmpty() ? null : memberRepository.findById(vicePresidentIds.get(0)).orElse(null);
+        MembreEntity treasurer     = treasurerIds.isEmpty()     ? null : memberRepository.findById(treasurerIds.get(0)).orElse(null);
+        MembreEntity secretary     = secretaryIds.isEmpty()     ? null : memberRepository.findById(secretaryIds.get(0)).orElse(null);
 
         CollectivityStructureEntity structure = CollectivityStructureEntity.builder()
                 .president(president)
-                .vice_president(vicePresident)
-                .tresurer(treasurer)
+                .vicePresident(vicePresident)
+                .treasurer(treasurer)
                 .secretary(secretary)
                 .build();
 
@@ -233,10 +196,5 @@ public class CollectivityService {
                 .structure(structure)
                 .members(members)
                 .build();
-    }
-
-    private MembreEntity fetchMemberOrThrow(String memberId) throws SQLException {
-        return memberRepository.findById(memberId)
-                .orElseThrow();
     }
 }

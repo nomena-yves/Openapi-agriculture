@@ -29,7 +29,7 @@ public class TransactionRepository {
                 INSERT INTO collectivity_transactions
                     (collectivity_id, member_id, account_id,
                      amount, payment_mode, creation_date)
-                VALUES (?::uuid, ?::uuid, ?::uuid, ?, ?::payment_mode_type, CURRENT_DATE)
+                VALUES (?, ?, ?, ?, ?::payment_mode_type, CURRENT_DATE)
                 RETURNING id
                 """;
 
@@ -57,7 +57,7 @@ public class TransactionRepository {
                 SELECT id, collectivity_id, member_id, account_id,
                        amount, payment_mode, creation_date
                 FROM collectivity_transactions
-                WHERE collectivity_id = ?::uuid
+                WHERE collectivity_id = ?
                   AND creation_date >= ?
                   AND creation_date <= ?
                 ORDER BY creation_date DESC

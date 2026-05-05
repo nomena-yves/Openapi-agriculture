@@ -28,7 +28,7 @@ public class MemberPaymentRepository {
                 INSERT INTO member_payments
                     (member_id, membership_fee_id, account_id,
                      amount, payment_mode, creation_date)
-                VALUES (?::uuid, ?::uuid, ?::uuid, ?, ?::payment_mode_type, CURRENT_DATE)
+                VALUES (?, ?, ?, ?, ?::payment_mode_type, CURRENT_DATE)
                 RETURNING id
                 """;
 
@@ -52,9 +52,9 @@ public class MemberPaymentRepository {
         if (ids == null || ids.isEmpty()) return List.of();
 
         String placeholders = ids.stream()
-                .map(i -> "?::uuid")
+                .map(i -> "?")
                 .reduce((a, b) -> a + ", " + b)
-                .orElse("?::uuid");
+                .orElse("?");
 
         String sql = String.format("""
                 SELECT id, member_id, membership_fee_id, account_id,

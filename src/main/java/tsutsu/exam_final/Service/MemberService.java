@@ -1,6 +1,5 @@
 package tsutsu.exam_final.Service;
 
-
 import org.springframework.stereotype.Service;
 import tsutsu.exam_final.DTO.CreateMemberDTO;
 import tsutsu.exam_final.Entity.MemberOccupationEntity;
@@ -26,74 +25,71 @@ public class MemberService {
         this.memberRepository = memberRepository;
         this.collectivityRepository = collectivityRepository;
     }
+
     public List<MembreEntity> createMembers(List<CreateMemberDTO> dtos) {
         List<MembreEntity> created = new ArrayList<>();
-
         for (CreateMemberDTO dto : dtos) {
             created.add(createSingleMember(dto));
         }
-
         return created;
     }
 
     private MembreEntity createSingleMember(CreateMemberDTO dto) {
         try {
+            String targetCollectivityId = dto.getCollectivityIdentifier();
 
-            if (!collectivityRepository.existsById(dto.getCollectivityIdentifier())) {
-                throw new NotFoundException(
-                        "Collectivity not found: " + dto.getCollectivityIdentifier());
+            if (!collectivityRepository.existsById(targetCollectivityId)) {
+                throw new NotFoundException("Collectivity not found: " + targetCollectivityId);
             }
-
-
             if (dto.getRegistrationFeePaid() == null || !dto.getRegistrationFeePaid()) {
-                throw new BadRequestException(
-                        "Registration fee (50 000 MGA) must be paid.");
+                throw new BadRequestException("Registration fee (50 000 MGA) must be paid.");
             }
-
-
             if (dto.getMembershipDuesPaid() == null || !dto.getMembershipDuesPaid()) {
-                throw new BadRequestException(
-                        "Membership dues must be paid before joining.");
+                throw new BadRequestException("Membership dues must be paid before joining.");
             }
 
             List<String> refereeIds = dto.getReferees();
-            List<MembreEntity> referees = memberRepository.findByIds(refereeIds);
-
-            if (referees.size() != refereeIds.size()) {
-                throw new NotFoundException(
-                        "One or more referees not found.");
+            if (refereeIds == null || refereeIds.size() < 2) {
+                throw new BadRequestException("At least 2 referees are required.");
             }
 
+            List<MembreEntity> referees = memberRepository.findByIds(refereeIds);
+            if (referees.size() != refereeIds.size()) {
+                throw new NotFoundException("One or more referees not found.");
+            }
+
+            // Vérifier que tous les parrains sont SENIOR
             boolean allSenior = referees.stream()
                     .allMatch(r -> r.getOccupation() == MemberOccupationEntity.SENIOR);
             if (!allSenior) {
-                throw new BadRequestException(
-                        "All referees must be confirmed members (SENIOR occupation).");
+                throw new BadRequestException("All referees must be SENIOR members.");
             }
 
+            // Vérifier ancienneté > 90 jours
             LocalDate ninetyDaysAgo = LocalDate.now().minusDays(90);
             boolean allAncient = referees.stream()
                     .allMatch(r -> r.getMembershipDate().isBefore(ninetyDaysAgo));
             if (!allAncient) {
-                throw new BadRequestException(
-                        "All referees must have more than 90 days of membership.");
+                throw new BadRequestException("All referees must have 90+ days of membership.");
             }
 
-            String targetCollectivityId = dto.getCollectivityIdentifier();
-            long fromTarget = referees.stream()
-                    .filter(r -> targetCollectivityId.equals(r.getCollectivity()))
-                    .count();
-            long fromOther = referees.size() - fromTarget;
+            // Vérifier règle de parrainage : parrains de la collectivité cible >= parrains extérieurs
+            long fromTarget = 0;
+            for (String refId : refereeIds) {
+                String occ = collectivityRepository.findOccupation(refId, targetCollectivityId)
+                        .orElse(null);
+                if (occ != null) fromTarget++;
+            }
+            long fromOther = refereeIds.size() - fromTarget;
 
             if (fromTarget < fromOther) {
                 throw new BadRequestException(
-                        "The number of referees from the target collectivity (" + fromTarget +
-                                ") must be >= the number from other collectivities (" + fromOther + ").");
+                        "Referees from target collectivity (" + fromTarget +
+                        ") must be >= referees from other collectivities (" + fromOther + ").");
             }
 
             if (memberRepository.findByEmail(dto.getEmail()).isPresent()) {
-                throw new BadRequestException(
-                        "Email already exists: " + dto.getEmail());
+                throw new BadRequestException("Email already exists: " + dto.getEmail());
             }
 
             MembreEntity member = MembreEntity.builder()
@@ -101,19 +97,21 @@ public class MemberService {
                     .lastName(dto.getLastName())
                     .birthDate(dto.getBirthDate())
                     .gender(dto.getGender())
-                    .adress(dto.getAddress())
+                    .address(dto.getAddress())
                     .profession(dto.getProfession())
                     .phoneNumber(String.valueOf(dto.getPhoneNumber()))
                     .email(dto.getEmail())
-                    .Occupation(dto.getOccupation())
+                    .occupation(dto.getOccupation())
                     .membershipDate(LocalDate.now())
                     .build();
 
             String newId = memberRepository.save(member);
             member.setId(newId);
 
-            memberRepository.saveReferees(newId, refereeIds);
+            // Lier à la collectivité avec occupation JUNIOR par défaut
+            memberRepository.saveMemberCollectivity(newId, targetCollectivityId, "JUNIOR");
 
+            memberRepository.saveReferees(newId, refereeIds);
             member.setReferees(referees);
 
             return member;

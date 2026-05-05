@@ -11,10 +11,8 @@ import tsutsu.exam_final.DTO.CreateCollectivityDTO;
 import tsutsu.exam_final.DTO.CreateMemberShipFeeDto;
 import tsutsu.exam_final.Entity.CollectivityEntity;
 import tsutsu.exam_final.Entity.CollectivityTransaction;
-import tsutsu.exam_final.Entity.FinancialAccount;
 import tsutsu.exam_final.Entity.MembershipFee;
 import tsutsu.exam_final.Service.CollectivityService;
-import tsutsu.exam_final.Service.FinancialAccountService;
 import tsutsu.exam_final.Service.MemberShipFeeService;
 import tsutsu.exam_final.Service.TransactionService;
 
@@ -28,16 +26,13 @@ public class CollectivityController {
     private final CollectivityService collectivityService;
     private final MemberShipFeeService membershipFeeService;
     private final TransactionService transactionService;
-    private final FinancialAccountService financialAccountService;
 
     public CollectivityController(CollectivityService collectivityService,
                                   MemberShipFeeService membershipFeeService,
-                                  TransactionService transactionService,
-                                  FinancialAccountService financialAccountService) {
+                                  TransactionService transactionService) {
         this.collectivityService = collectivityService;
         this.membershipFeeService = membershipFeeService;
         this.transactionService = transactionService;
-        this.financialAccountService = financialAccountService;
     }
 
     @PostMapping
@@ -66,16 +61,6 @@ public class CollectivityController {
     }
 
 
-    @GetMapping("/{id}/financialAccounts")
-    public ResponseEntity<List<FinancialAccount>> getFinancialAccounts(
-            @PathVariable("id") String collectivityId,
-            @RequestParam(value = "at", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate at) {
-
-        List<FinancialAccount> accounts =
-                financialAccountService.getAccounts(collectivityId, at);
-        return ResponseEntity.ok(accounts);
-    }
 
     @GetMapping("/{id}/membershipFees")
     public ResponseEntity<List<MembershipFee>> getMembershipFees(

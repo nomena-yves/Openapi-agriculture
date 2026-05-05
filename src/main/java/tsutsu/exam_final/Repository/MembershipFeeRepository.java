@@ -27,7 +27,7 @@ public class MembershipFeeRepository {
         String sql = """
                 INSERT INTO membership_fees
                     (collectivity_id, eligible_from, frequency, amount, label, status)
-                VALUES (?::uuid, ?, ?::frequency_type, ?, ?, ?::activity_status_type)
+                VALUES (?, ?, ?::frequency_type, ?, ?, ?::activity_status_type)
                 RETURNING id
                 """;
 
@@ -61,7 +61,7 @@ public class MembershipFeeRepository {
                 SELECT id, collectivity_id, eligible_from, frequency,
                        amount, label, status
                 FROM membership_fees
-                WHERE collectivity_id = ?::uuid
+                WHERE collectivity_id = ?
                 ORDER BY eligible_from
                 """;
 
@@ -85,7 +85,7 @@ public class MembershipFeeRepository {
                 SELECT id, collectivity_id, eligible_from, frequency,
                        amount, label, status
                 FROM membership_fees
-                WHERE id = ?::uuid
+                WHERE id = ?
                 """;
 
         try (Connection conn = db.getConnection();
