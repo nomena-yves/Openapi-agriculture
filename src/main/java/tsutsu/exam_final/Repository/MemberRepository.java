@@ -19,6 +19,7 @@ public class MemberRepository {
     public MemberRepository(DatabaseConfig db) {
         this.db = db;
     }
+
     public String save(MembreEntity member) throws SQLException {
         String sql = """
                 INSERT INTO members
@@ -51,6 +52,7 @@ public class MemberRepository {
         }
     }
 
+    // Lie le membre à une collectivité avec son occupation dans member_collectivities
     public void saveMemberCollectivity(String memberId,
                                        String collectivityId,
                                        String occupation) throws SQLException {
@@ -172,6 +174,7 @@ public class MemberRepository {
         }
     }
 
+    // Trouve tous les membres d'une collectivité via member_collectivities
     public List<MembreEntity> findByCollectivityId(String collectivityId) throws SQLException {
         String sql = """
                 SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender,
@@ -198,6 +201,7 @@ public class MemberRepository {
         }
     }
 
+    // Trouve les membres d'une collectivité spécifique avec une occupation donnée
     public List<MembreEntity> findByCollectivityAndOccupation(String collectivityId,
                                                                String occupation) throws SQLException {
         String sql = """

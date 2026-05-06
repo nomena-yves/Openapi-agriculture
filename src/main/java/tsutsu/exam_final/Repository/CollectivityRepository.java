@@ -16,6 +16,7 @@ public class CollectivityRepository {
     public CollectivityRepository(DatabaseConfig db) {
         this.db = db;
     }
+
     public String save(String location) throws SQLException {
         String newId = "COL-" + System.currentTimeMillis();
         String sql = """
@@ -59,6 +60,7 @@ public class CollectivityRepository {
         }
     }
 
+    // Insère un membre avec une occupation spécifique dans member_collectivities
     public void assignMemberWithOccupation(String collectivityId,
                                            String memberId,
                                            String occupation) throws SQLException {
@@ -174,6 +176,7 @@ public class CollectivityRepository {
         }
     }
 
+    // Récupère l'occupation d'un membre dans une collectivité
     public Optional<String> findOccupation(String memberId, String collectivityId) throws SQLException {
         String sql = """
                 SELECT occupation FROM member_collectivities
@@ -192,6 +195,7 @@ public class CollectivityRepository {
         }
     }
 
+    // Récupère les IDs des membres avec un rôle spécifique dans une collectivité
     public List<String> findMemberIdsByOccupation(String collectivityId,
                                                    String occupation) throws SQLException {
         String sql = """
