@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/collectivities")
 public class CollectivityController {
 
     private final CollectivityService collectivityService;
@@ -36,14 +35,16 @@ public class CollectivityController {
         this.statisticsService = statisticsService;
     }
 
-    @PostMapping
+    // POST /collectivities
+    @PostMapping("/collectivities")
     public ResponseEntity<List<CollectivityEntity>> createCollectivities(
             @RequestBody @Valid List<CreateCollectivityDTO> dtos) {
         List<CollectivityEntity> created = collectivityService.createCollectivities(dtos);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping("/{id}")
+    // GET /collectivities/{id}
+    @GetMapping("/collectivities/{id}")
     public ResponseEntity<CollectivityEntity> getCollectivity(
             @PathVariable("id") String collectivityId) {
         CollectivityEntity collectivity = collectivityService.getById(collectivityId);
@@ -51,7 +52,7 @@ public class CollectivityController {
     }
 
     // PUT /collectivities/{id}/informations
-    @PutMapping("/{id}/informations")
+    @PutMapping("/collectivities/{id}/informations")
     public ResponseEntity<CollectivityEntity> assignInformations(
             @PathVariable("id") String collectivityId,
             @RequestBody AssignIdentityDto dto) {
@@ -59,8 +60,8 @@ public class CollectivityController {
         return ResponseEntity.ok(updated);
     }
 
-    // GET /collectivities/{id}/financialAccounts?at=2026-01-01
-    @GetMapping("/{id}/financialAccounts")
+    // GET /collectivities/{id}/financialAccounts?at=
+    @GetMapping("/collectivities/{id}/financialAccounts")
     public ResponseEntity<List<FinancialAccount>> getFinancialAccounts(
             @PathVariable("id") String collectivityId,
             @RequestParam(value = "at", required = false)
@@ -70,7 +71,7 @@ public class CollectivityController {
     }
 
     // GET /collectivities/{id}/membershipFees
-    @GetMapping("/{id}/membershipFees")
+    @GetMapping("/collectivities/{id}/membershipFees")
     public ResponseEntity<List<MembershipFee>> getMembershipFees(
             @PathVariable("id") String collectivityId) {
         List<MembershipFee> fees = membershipFeeService.getByCollectivity(collectivityId);
@@ -78,7 +79,7 @@ public class CollectivityController {
     }
 
     // POST /collectivities/{id}/membershipFees
-    @PostMapping("/{id}/membershipFees")
+    @PostMapping("/collectivities/{id}/membershipFees")
     public ResponseEntity<List<MembershipFee>> createMembershipFees(
             @PathVariable("id") String collectivityId,
             @RequestBody List<CreateMemberShipFeeDto> dtos) {
@@ -87,7 +88,7 @@ public class CollectivityController {
     }
 
     // GET /collectivities/{id}/transactions?from=...&to=...
-    @GetMapping("/{id}/transactions")
+    @GetMapping("/collectivities/{id}/transactions")
     public ResponseEntity<List<CollectivityTransaction>> getTransactions(
             @PathVariable("id") String collectivityId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -97,19 +98,19 @@ public class CollectivityController {
         return ResponseEntity.ok(transactions);
     }
 
-    // GET /collectivities/{id}/statistics?from=...&to=...
-    @GetMapping("/{id}/statistics")
-    public ResponseEntity<CollectivityStatisticsDto> getCollectivityStatistics(
+    // GET /collectivites/{id}/statistics  ← NOTE: "collectivites" sans 'i' comme dans le YAML
+    @GetMapping("/collectivites/{id}/statistics")
+    public ResponseEntity<List<CollectivityStatisticsDto>> getCollectivityStatistics(
             @PathVariable("id") String collectivityId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        CollectivityStatisticsDto stats =
+        List<CollectivityStatisticsDto> stats =
                 statisticsService.getCollectivityStatistics(collectivityId, from, to);
         return ResponseEntity.ok(stats);
     }
 
-    // GET /collectivities/statistics?from=...&to=...
-    @GetMapping("/statistics")
+    // GET /collectivites/statistics  ← NOTE: "collectivites" sans 'i' comme dans le YAML
+    @GetMapping("/collectivites/statistics")
     public ResponseEntity<List<FederationStatisticsDto>> getFederationStatistics(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {

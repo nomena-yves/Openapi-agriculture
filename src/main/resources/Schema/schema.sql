@@ -125,3 +125,37 @@ INSERT INTO member_collectivities VALUES
                                       ('C1-M1','col-1','PRESIDENT'),
                                       ('C1-M2','col-1','VICE_PRESIDENT')
 ON CONFLICT DO NOTHING;
+-- ============================================================
+-- TABLE : activities (Bonus 1 - Fonctionnalité E)
+-- ============================================================
+
+DROP TABLE IF EXISTS attendance  CASCADE;
+DROP TABLE IF EXISTS activities  CASCADE;
+
+CREATE TABLE activities (
+    id              VARCHAR(50)  PRIMARY KEY,
+    collectivity_id VARCHAR(50)  NOT NULL REFERENCES collectivities(id) ON DELETE CASCADE,
+    label           VARCHAR(255) NOT NULL,
+    description     TEXT,
+    date            DATE         NOT NULL,
+    type            VARCHAR(50)  NOT NULL,
+    mandatory       BOOLEAN      NOT NULL DEFAULT true,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- TABLE : attendance (Bonus 1 - Fonctionnalité F)
+-- ============================================================
+
+CREATE TABLE attendance (
+    activity_id     VARCHAR(50)  NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    member_id       VARCHAR(50)  NOT NULL REFERENCES members(id)    ON DELETE CASCADE,
+    present         BOOLEAN      NOT NULL,
+    excuse_reason   TEXT,
+    PRIMARY KEY (activity_id, member_id)
+);
+
+CREATE INDEX idx_attendance_activity ON attendance(activity_id);
+CREATE INDEX idx_attendance_member   ON attendance(member_id);
+CREATE INDEX idx_activities_coll     ON activities(collectivity_id);
+CREATE INDEX idx_activities_date     ON activities(date);

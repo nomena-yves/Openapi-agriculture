@@ -1,4 +1,5 @@
 package tsutsu.exam_final.DTO;
+
 import jakarta.validation.constraints.*;
 import lombok.*;
 import tsutsu.exam_final.Entity.GenderEntity;
@@ -6,13 +7,11 @@ import tsutsu.exam_final.Entity.MemberOccupationEntity;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class CreateMemberDTO {
+
     @NotBlank(message = "First name is required")
     private String firstName;
 
@@ -46,8 +45,11 @@ public class CreateMemberDTO {
     private String collectivityIdentifier;
 
     @NotNull(message = "Referees list is required")
-    @Size(min = 2, message = "At least 2 referees are required for new members")
+    @Size(min = 2, message = "At least 2 referees are required")
     private List<String> referees;
+
+    // Nature de la relation avec chaque parrain : { "C1-M5": "ami", "C1-M6": "famille" }
+    private Map<String, String> refereeRelations;
 
     @NotNull(message = "registrationFeePaid is required")
     private Boolean registrationFeePaid;
@@ -55,4 +57,3 @@ public class CreateMemberDTO {
     @NotNull(message = "membershipDuesPaid is required")
     private Boolean membershipDuesPaid;
 }
-

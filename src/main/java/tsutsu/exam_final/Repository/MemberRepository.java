@@ -20,6 +20,7 @@ public class MemberRepository {
         this.db = db;
     }
 
+    // Sauvegarde le membre (sans occupation ni collectivity_id)
     public String save(MembreEntity member) throws SQLException {
         String sql = """
                 INSERT INTO members
@@ -72,8 +73,9 @@ public class MemberRepository {
         }
     }
 
-    public void saveReferees(String memberId, List<String> refereeIds) throws SQLException {
-        String sql = "INSERT INTO member_referees (member_id, referee_id) VALUES (?, ?)";
+    public void saveReferees(String memberId, List<String> refereeIds,
+                             java.util.Map<String, String> relations) throws SQLException {
+        String sql = "INSERT INTO member_referees (member_id, referee_id, relation) VALUES (?, ?, ?)";
 
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -81,6 +83,8 @@ public class MemberRepository {
             for (String refereeId : refereeIds) {
                 ps.setString(1, memberId);
                 ps.setString(2, refereeId);
+                String relation = (relations != null) ? relations.get(refereeId) : null;
+                ps.setString(3, relation);
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -89,14 +93,15 @@ public class MemberRepository {
 
     public Optional<MembreEntity> findById(String id) throws SQLException {
         String sql = """
-                SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender,
+                SELECT DISTINCT ON (m.id)
+                       m.id, m.first_name, m.last_name, m.birth_date, m.gender,
                        m.address, m.profession, m.phone_number, m.email,
                        m.membership_date,
                        mc.occupation, mc.collectivity_id
                 FROM members m
                 LEFT JOIN member_collectivities mc ON mc.member_id = m.id
                 WHERE m.id = ?
-                LIMIT 1
+                ORDER BY m.id
                 """;
 
         try (Connection conn = db.getConnection();
@@ -121,14 +126,17 @@ public class MemberRepository {
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("?");
 
+        // DISTINCT ON pour éviter les doublons quand un membre est dans plusieurs collectivités
         String sql = String.format("""
-                SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender,
+                SELECT DISTINCT ON (m.id)
+                       m.id, m.first_name, m.last_name, m.birth_date, m.gender,
                        m.address, m.profession, m.phone_number, m.email,
                        m.membership_date,
                        mc.occupation, mc.collectivity_id
                 FROM members m
                 LEFT JOIN member_collectivities mc ON mc.member_id = m.id
                 WHERE m.id IN (%s)
+                ORDER BY m.id
                 """, placeholders);
 
         try (Connection conn = db.getConnection();

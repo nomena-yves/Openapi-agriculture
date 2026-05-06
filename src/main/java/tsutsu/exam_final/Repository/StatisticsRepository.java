@@ -17,15 +17,17 @@ public class StatisticsRepository {
         this.db = db;
     }
 
-    // Montant total payé par membre dans une collectivité sur une période
+    // Montant payé + infos membre pour chaque membre d'une collectivité
     public List<MemberPaymentStat> getMemberPaymentStats(String collectivityId,
                                                           LocalDate from,
                                                           LocalDate to) throws SQLException {
         String sql = """
                 SELECT
-                    m.id AS member_id,
+                    m.id          AS member_id,
                     m.first_name,
                     m.last_name,
+                    m.email,
+                    mc.occupation,
                     COALESCE(SUM(mp.amount), 0) AS total_paid
                 FROM members m
                 INNER JOIN member_collectivities mc ON mc.member_id = m.id
@@ -37,7 +39,7 @@ public class StatisticsRepository {
                         WHERE collectivity_id = ? AND status = 'ACTIVE'
                     )
                 WHERE mc.collectivity_id = ?
-                GROUP BY m.id, m.first_name, m.last_name
+                GROUP BY m.id, m.first_name, m.last_name, m.email, mc.occupation
                 ORDER BY m.last_name, m.first_name
                 """;
 
@@ -56,6 +58,8 @@ public class StatisticsRepository {
                             rs.getString("member_id"),
                             rs.getString("first_name"),
                             rs.getString("last_name"),
+                            rs.getString("email"),
+                            rs.getString("occupation"),
                             rs.getDouble("total_paid")
                     ));
                 }
@@ -64,7 +68,7 @@ public class StatisticsRepository {
         }
     }
 
-    // Montant total des cotisations actives attendues sur une période (pour calculer impayés)
+    // Montant total attendu des cotisations ACTIVES sur la période
     public double getExpectedAmountForPeriod(String collectivityId,
                                               LocalDate from,
                                               LocalDate to) throws SQLException {
@@ -89,19 +93,20 @@ public class StatisticsRepository {
         }
     }
 
-    // Liste de toutes les collectivités avec leurs stats fédération
+    // Stats globales par collectivité pour la fédération
     public List<CollectivityFedStat> getFederationStats(LocalDate from,
                                                          LocalDate to) throws SQLException {
         String sql = """
                 SELECT
-                    c.id AS collectivity_id,
-                    c.name AS collectivity_name,
+                    c.id     AS collectivity_id,
+                    c.name   AS collectivity_name,
+                    c.number AS collectivity_number,
                     COUNT(DISTINCT mc.member_id) AS total_members,
                     COUNT(DISTINCT CASE WHEN m.membership_date >= ? THEN m.id END) AS new_members
                 FROM collectivities c
                 LEFT JOIN member_collectivities mc ON mc.collectivity_id = c.id
                 LEFT JOIN members m ON m.id = mc.member_id
-                GROUP BY c.id, c.name
+                GROUP BY c.id, c.name, c.number
                 ORDER BY c.name
                 """;
 
@@ -113,9 +118,12 @@ public class StatisticsRepository {
             List<CollectivityFedStat> result = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    String numStr = rs.getString("collectivity_number");
+                    Integer number = numStr != null ? Integer.parseInt(numStr) : null;
                     result.add(new CollectivityFedStat(
                             rs.getString("collectivity_id"),
                             rs.getString("collectivity_name"),
+                            number,
                             rs.getInt("total_members"),
                             rs.getInt("new_members")
                     ));
@@ -125,7 +133,7 @@ public class StatisticsRepository {
         }
     }
 
-    // Nombre de membres à jour dans leurs cotisations actives pour une collectivité
+    // Nombre de membres à jour dans leurs cotisations actives
     public int countMembersUpToDate(String collectivityId,
                                      LocalDate from,
                                      LocalDate to) throws SQLException {
@@ -168,12 +176,15 @@ public class StatisticsRepository {
             String memberId,
             String firstName,
             String lastName,
+            String email,
+            String occupation,
             double totalPaid
     ) {}
 
     public record CollectivityFedStat(
             String collectivityId,
             String collectivityName,
+            Integer collectivityNumber,
             int totalMembers,
             int newMembers
     ) {}

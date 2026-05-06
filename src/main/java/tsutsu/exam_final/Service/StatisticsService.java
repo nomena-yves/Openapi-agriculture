@@ -3,9 +3,10 @@ package tsutsu.exam_final.Service;
 import org.springframework.stereotype.Service;
 import tsutsu.exam_final.Controllers.CollectivityStatisticsDto;
 import tsutsu.exam_final.Controllers.FederationStatisticsDto;
+import tsutsu.exam_final.Repository.ActivityRepository;
+import tsutsu.exam_final.Repository.CollectivityRepository;
 import tsutsu.exam_final.Repository.StatisticsRepository;
 import tsutsu.exam_final.exception.NotFoundException;
-import tsutsu.exam_final.Repository.CollectivityRepository;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -17,21 +18,24 @@ public class StatisticsService {
 
     private final StatisticsRepository statisticsRepository;
     private final CollectivityRepository collectivityRepository;
+    private final ActivityRepository activityRepository;
 
     public StatisticsService(StatisticsRepository statisticsRepository,
-                              CollectivityRepository collectivityRepository) {
+                              CollectivityRepository collectivityRepository,
+                              ActivityRepository activityRepository) {
         this.statisticsRepository = statisticsRepository;
         this.collectivityRepository = collectivityRepository;
+        this.activityRepository = activityRepository;
     }
 
-    // GET /collectivities/{id}/statistics
-    public CollectivityStatisticsDto getCollectivityStatistics(String collectivityId,
-                                                                LocalDate from,
-                                                                LocalDate to) {
+    // GET /collectivites/{id}/statistics
+    // Retourne pour chaque membre : earnedAmount + unpaidAmount + attendanceRate (Bonus 2)
+    public List<CollectivityStatisticsDto> getCollectivityStatistics(String collectivityId,
+                                                                      LocalDate from,
+                                                                      LocalDate to) {
         try {
-            if (!collectivityRepository.existsById(collectivityId)) {
+            if (!collectivityRepository.existsById(collectivityId))
                 throw new NotFoundException("Collectivity not found: " + collectivityId);
-            }
 
             double expectedAmount =
                     statisticsRepository.getExpectedAmountForPeriod(collectivityId, from, to);
@@ -39,29 +43,39 @@ public class StatisticsService {
             List<StatisticsRepository.MemberPaymentStat> paymentStats =
                     statisticsRepository.getMemberPaymentStats(collectivityId, from, to);
 
-            List<CollectivityStatisticsDto.MemberStatDto> memberStats = new ArrayList<>();
+            List<CollectivityStatisticsDto> result = new ArrayList<>();
             for (StatisticsRepository.MemberPaymentStat stat : paymentStats) {
                 double unpaid = Math.max(0, expectedAmount - stat.totalPaid());
-                memberStats.add(CollectivityStatisticsDto.MemberStatDto.builder()
-                        .memberId(stat.memberId())
-                        .firstName(stat.firstName())
-                        .lastName(stat.lastName())
-                        .totalPaid(stat.totalPaid())
-                        .totalUnpaid(unpaid)
+
+                // Bonus 2 — taux d'assiduité individuel
+                double attendanceRate = activityRepository.getAttendanceRate(
+                        stat.memberId(), collectivityId, from, to);
+
+                CollectivityStatisticsDto.MemberDescription desc =
+                        CollectivityStatisticsDto.MemberDescription.builder()
+                                .id(stat.memberId())
+                                .firstName(stat.firstName())
+                                .lastName(stat.lastName())
+                                .email(stat.email())
+                                .occupation(stat.occupation())
+                                .build();
+
+                result.add(CollectivityStatisticsDto.builder()
+                        .memberDescription(desc)
+                        .earnedAmount(stat.totalPaid())
+                        .unpaidAmount(unpaid)
+                        .attendanceRate(attendanceRate)
                         .build());
             }
-
-            return CollectivityStatisticsDto.builder()
-                    .collectivityId(collectivityId)
-                    .memberStats(memberStats)
-                    .build();
+            return result;
 
         } catch (SQLException e) {
             throw new RuntimeException("Database error: " + e.getMessage(), e);
         }
     }
 
-    // GET /collectivities/statistics
+    // GET /collectivites/statistics
+    // Retourne pour chaque collectivité : upToDatePercentage + newMembers + attendanceRate (Bonus 2)
     public List<FederationStatisticsDto> getFederationStatistics(LocalDate from, LocalDate to) {
         try {
             List<StatisticsRepository.CollectivityFedStat> fedStats =
@@ -72,19 +86,26 @@ public class StatisticsService {
                 int upToDate = statisticsRepository.countMembersUpToDate(
                         stat.collectivityId(), from, to);
 
-                double upToDatePercentage = stat.totalMembers() == 0
-                        ? 0.0
-                        : (double) upToDate / stat.totalMembers() * 100;
+                double percentage = stat.totalMembers() == 0 ? 0.0
+                        : Math.round((double) upToDate / stat.totalMembers() * 10000.0) / 100.0;
+
+                // Bonus 2 — taux d'assiduité global de la collectivité
+                double attendanceRate = activityRepository.getCollectivityAttendanceRate(
+                        stat.collectivityId(), from, to);
+
+                FederationStatisticsDto.CollectivityInformation info =
+                        FederationStatisticsDto.CollectivityInformation.builder()
+                                .name(stat.collectivityName())
+                                .number(stat.collectivityNumber())
+                                .build();
 
                 result.add(FederationStatisticsDto.builder()
-                        .collectivityId(stat.collectivityId())
-                        .collectivityName(stat.collectivityName())
-                        .totalMembers(stat.totalMembers())
-                        .newMembers(stat.newMembers())
-                        .upToDatePercentage(Math.round(upToDatePercentage * 100.0) / 100.0)
+                        .collectivityInformation(info)
+                        .newMembersNumber(stat.newMembers())
+                        .overallMemberCurrentDuePercentage(percentage)
+                        .overallAttendanceRate(attendanceRate)
                         .build());
             }
-
             return result;
 
         } catch (SQLException e) {

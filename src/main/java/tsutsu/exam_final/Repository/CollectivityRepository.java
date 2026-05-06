@@ -17,11 +17,12 @@ public class CollectivityRepository {
         this.db = db;
     }
 
-    public String save(String location) throws SQLException {
+    // Crée la collectivité avec location et specialization
+    public String save(String location, String specialization) throws SQLException {
         String newId = "COL-" + System.currentTimeMillis();
         String sql = """
-                INSERT INTO collectivities (id, location)
-                VALUES (?, ?)
+                INSERT INTO collectivities (id, location, specialization)
+                VALUES (?, ?, ?)
                 RETURNING id
                 """;
 
@@ -30,6 +31,7 @@ public class CollectivityRepository {
 
             ps.setString(1, newId);
             ps.setString(2, location);
+            ps.setString(3, specialization);
 
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -38,6 +40,7 @@ public class CollectivityRepository {
         }
     }
 
+    // Insère les membres dans member_collectivities avec leur occupation
     public void assignMembersToCollectivity(String collectivityId,
                                             List<String> memberIds,
                                             String defaultOccupation) throws SQLException {

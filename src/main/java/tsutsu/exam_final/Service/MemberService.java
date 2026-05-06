@@ -111,7 +111,7 @@ public class MemberService {
             // Lier à la collectivité avec occupation JUNIOR par défaut
             memberRepository.saveMemberCollectivity(newId, targetCollectivityId, "JUNIOR");
 
-            memberRepository.saveReferees(newId, refereeIds);
+            memberRepository.saveReferees(newId, refereeIds, dto.getRefereeRelations());
             member.setReferees(referees);
 
             return member;

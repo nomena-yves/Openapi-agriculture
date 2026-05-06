@@ -130,7 +130,7 @@ public class CollectivityService {
             MembreEntity secretary     = memberRepository.findById(secretaryId).orElseThrow();
 
             // Créer la collectivité
-            String collectivityId = collectivityRepository.save(dto.getLocation());
+            String collectivityId = collectivityRepository.save(dto.getLocation(), dto.getSpecialization());
 
             // Insérer tous les membres comme JUNIOR par défaut
             collectivityRepository.assignMembersToCollectivity(collectivityId, memberIds, "JUNIOR");
