@@ -1,6 +1,5 @@
 package tsutsu.exam_final.Controllers;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,17 +25,16 @@ public class ActivityController {
     @PostMapping
     public ResponseEntity<List<Activity>> createActivities(
             @PathVariable("id") String collectivityId,
-            @RequestBody @Valid List<CreateActivityDTO> dtos) {
+            @RequestBody List<CreateActivityDTO> dtos) {
         List<Activity> created = activityService.createActivities(collectivityId, dtos);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.ok(created);
     }
 
     // GET /collectivities/{id}/activities
     @GetMapping
     public ResponseEntity<List<Activity>> getActivities(
             @PathVariable("id") String collectivityId) {
-        List<Activity> activities = activityService.getActivities(collectivityId);
-        return ResponseEntity.ok(activities);
+        return ResponseEntity.ok(activityService.getActivities(collectivityId));
     }
 
     // POST /collectivities/{id}/activities/{activityId}/attendance
@@ -44,9 +42,9 @@ public class ActivityController {
     public ResponseEntity<List<Attendance>> recordAttendance(
             @PathVariable("id") String collectivityId,
             @PathVariable("activityId") String activityId,
-            @RequestBody CreateAttendanceDTO dto) {
+            @RequestBody List<CreateAttendanceDTO> dtos) {
         List<Attendance> attendance =
-                activityService.recordAttendance(collectivityId, activityId, dto);
+                activityService.recordAttendance(collectivityId, activityId, dtos);
         return ResponseEntity.status(HttpStatus.CREATED).body(attendance);
     }
 
@@ -55,8 +53,6 @@ public class ActivityController {
     public ResponseEntity<List<Attendance>> getAttendance(
             @PathVariable("id") String collectivityId,
             @PathVariable("activityId") String activityId) {
-        List<Attendance> attendance =
-                activityService.getAttendance(collectivityId, activityId);
-        return ResponseEntity.ok(attendance);
+        return ResponseEntity.ok(activityService.getAttendance(collectivityId, activityId));
     }
 }

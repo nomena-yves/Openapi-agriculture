@@ -1,14 +1,14 @@
 package tsutsu.exam_final.Controllers;
 
 import lombok.*;
-import java.util.List;
 
+// CollectivityLocalStatistics selon YAML v0.0.7
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CollectivityStatisticsDto {
     private MemberDescription memberDescription;
     private double earnedAmount;
     private double unpaidAmount;
-    private double attendanceRate; // Bonus 2 — taux d'assiduité individuel en %
+    private double assiduityPercentage; // Bonus 2 — selon YAML v0.0.7
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class MemberDescription {

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import tsutsu.exam_final.Entity.Activity;
+import tsutsu.exam_final.Entity.MemberOccupationEntity;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,17 +14,13 @@ public class CreateActivityDTO {
     @NotBlank(message = "Label is required")
     private String label;
 
-    private String description;
+    @NotNull(message = "Activity type is required")
+    private Activity.ActivityType activityType;
 
-    @NotNull(message = "Date is required")
-    private LocalDate date;
+    // Occupations concernées — null = tous les membres
+    private List<MemberOccupationEntity> memberOccupationConcerned;
 
-    @NotNull(message = "Type is required")
-    private Activity.ActivityType type;
-
-    @NotNull(message = "Mandatory flag is required")
-    private Boolean mandatory;
-
-    // null = tous les membres, sinon liste des occupations ciblées
-    private List<String> targetOccupations;
+    // Soit recurrenceRule soit executiveDate — pas les deux en même temps
+    private Activity.MonthlyRecurrenceRule recurrenceRule;
+    private LocalDate executiveDate;
 }

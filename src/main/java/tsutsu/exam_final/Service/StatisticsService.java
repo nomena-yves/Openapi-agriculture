@@ -29,10 +29,8 @@ public class StatisticsService {
     }
 
     // GET /collectivites/{id}/statistics
-    // Retourne pour chaque membre : earnedAmount + unpaidAmount + attendanceRate (Bonus 2)
-    public List<CollectivityStatisticsDto> getCollectivityStatistics(String collectivityId,
-                                                                      LocalDate from,
-                                                                      LocalDate to) {
+    public List<CollectivityStatisticsDto> getCollectivityStatistics(
+            String collectivityId, LocalDate from, LocalDate to) {
         try {
             if (!collectivityRepository.existsById(collectivityId))
                 throw new NotFoundException("Collectivity not found: " + collectivityId);
@@ -48,23 +46,20 @@ public class StatisticsService {
                 double unpaid = Math.max(0, expectedAmount - stat.totalPaid());
 
                 // Bonus 2 — taux d'assiduité individuel
-                double attendanceRate = activityRepository.getAttendanceRate(
+                double assiduity = activityRepository.getAttendanceRate(
                         stat.memberId(), collectivityId, from, to);
 
-                CollectivityStatisticsDto.MemberDescription desc =
-                        CollectivityStatisticsDto.MemberDescription.builder()
+                result.add(CollectivityStatisticsDto.builder()
+                        .memberDescription(CollectivityStatisticsDto.MemberDescription.builder()
                                 .id(stat.memberId())
                                 .firstName(stat.firstName())
                                 .lastName(stat.lastName())
                                 .email(stat.email())
                                 .occupation(stat.occupation())
-                                .build();
-
-                result.add(CollectivityStatisticsDto.builder()
-                        .memberDescription(desc)
+                                .build())
                         .earnedAmount(stat.totalPaid())
                         .unpaidAmount(unpaid)
-                        .attendanceRate(attendanceRate)
+                        .assiduityPercentage(assiduity)
                         .build());
             }
             return result;
@@ -75,8 +70,8 @@ public class StatisticsService {
     }
 
     // GET /collectivites/statistics
-    // Retourne pour chaque collectivité : upToDatePercentage + newMembers + attendanceRate (Bonus 2)
-    public List<FederationStatisticsDto> getFederationStatistics(LocalDate from, LocalDate to) {
+    public List<FederationStatisticsDto> getFederationStatistics(
+            LocalDate from, LocalDate to) {
         try {
             List<StatisticsRepository.CollectivityFedStat> fedStats =
                     statisticsRepository.getFederationStats(from, to);
@@ -86,24 +81,21 @@ public class StatisticsService {
                 int upToDate = statisticsRepository.countMembersUpToDate(
                         stat.collectivityId(), from, to);
 
-                double percentage = stat.totalMembers() == 0 ? 0.0
+                double duePercentage = stat.totalMembers() == 0 ? 0.0
                         : Math.round((double) upToDate / stat.totalMembers() * 10000.0) / 100.0;
 
-                // Bonus 2 — taux d'assiduité global de la collectivité
-                double attendanceRate = activityRepository.getCollectivityAttendanceRate(
+                // Bonus 2 — taux d'assiduité global
+                double assiduityPercentage = activityRepository.getCollectivityAttendanceRate(
                         stat.collectivityId(), from, to);
 
-                FederationStatisticsDto.CollectivityInformation info =
-                        FederationStatisticsDto.CollectivityInformation.builder()
+                result.add(FederationStatisticsDto.builder()
+                        .collectivityInformation(FederationStatisticsDto.CollectivityInformation.builder()
                                 .name(stat.collectivityName())
                                 .number(stat.collectivityNumber())
-                                .build();
-
-                result.add(FederationStatisticsDto.builder()
-                        .collectivityInformation(info)
+                                .build())
                         .newMembersNumber(stat.newMembers())
-                        .overallMemberCurrentDuePercentage(percentage)
-                        .overallAttendanceRate(attendanceRate)
+                        .overallMemberCurrentDuePercentage(duePercentage)
+                        .overallMemberAssiduityPercentage(assiduityPercentage)
                         .build());
             }
             return result;

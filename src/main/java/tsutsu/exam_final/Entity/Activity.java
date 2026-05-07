@@ -8,15 +8,20 @@ import java.util.List;
 public class Activity {
     private String id;
     private String label;
-    private String description;
-    private LocalDate date;
-    private ActivityType type;
-    private boolean mandatory;
-    private List<String> targetOccupations; // null = tous les membres
+    private ActivityType activityType;
+    private List<MemberOccupationEntity> memberOccupationConcerned;
+    private MonthlyRecurrenceRule recurrenceRule;
+    private LocalDate executiveDate;
 
     public enum ActivityType {
-        MONTHLY_GENERAL_ASSEMBLY,
-        JUNIOR_TRAINING,
-        EXCEPTIONAL
+        MEETING,
+        TRAINING,
+        OTHER
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class MonthlyRecurrenceRule {
+        private Integer weekOrdinal; // 1-5
+        private String dayOfWeek;    // MO, TU, WE, TH, FR, SA, SU
     }
 }

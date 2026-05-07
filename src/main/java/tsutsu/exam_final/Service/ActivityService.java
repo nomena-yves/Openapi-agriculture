@@ -5,6 +5,7 @@ import tsutsu.exam_final.DTO.CreateActivityDTO;
 import tsutsu.exam_final.DTO.CreateAttendanceDTO;
 import tsutsu.exam_final.Entity.Activity;
 import tsutsu.exam_final.Entity.Attendance;
+import tsutsu.exam_final.Entity.AttendanceStatus;
 import tsutsu.exam_final.Repository.ActivityRepository;
 import tsutsu.exam_final.Repository.CollectivityRepository;
 import tsutsu.exam_final.exception.BadRequestException;
@@ -35,13 +36,22 @@ public class ActivityService {
 
             List<Activity> result = new ArrayList<>();
             for (CreateActivityDTO dto : dtos) {
+                // Validation : recurrenceRule ET executiveDate ne peuvent pas être tous les deux fournis
+                if (dto.getRecurrenceRule() != null && dto.getExecutiveDate() != null) {
+                    throw new BadRequestException(
+                            "Cannot provide both recurrenceRule and executiveDate at the same time.");
+                }
+                if (dto.getRecurrenceRule() == null && dto.getExecutiveDate() == null) {
+                    throw new BadRequestException(
+                            "Either recurrenceRule or executiveDate must be provided.");
+                }
+
                 Activity activity = Activity.builder()
                         .label(dto.getLabel())
-                        .description(dto.getDescription())
-                        .date(dto.getDate())
-                        .type(dto.getType())
-                        .mandatory(dto.getMandatory())
-                        .targetOccupations(dto.getTargetOccupations())
+                        .activityType(dto.getActivityType())
+                        .memberOccupationConcerned(dto.getMemberOccupationConcerned())
+                        .recurrenceRule(dto.getRecurrenceRule())
+                        .executiveDate(dto.getExecutiveDate())
                         .build();
 
                 String id = activityRepository.save(collectivityId, activity);
@@ -60,45 +70,46 @@ public class ActivityService {
         try {
             if (!collectivityRepository.existsById(collectivityId))
                 throw new NotFoundException("Collectivity not found: " + collectivityId);
-
             return activityRepository.findByCollectivityId(collectivityId);
-
         } catch (SQLException e) {
             throw new RuntimeException("Database error: " + e.getMessage(), e);
         }
     }
 
     // POST /collectivities/{id}/activities/{activityId}/attendance
+    // dto est maintenant une liste de CreateAttendanceDTO
     public List<Attendance> recordAttendance(String collectivityId,
                                               String activityId,
-                                              CreateAttendanceDTO dto) {
+                                              List<CreateAttendanceDTO> dtos) {
         try {
             if (!collectivityRepository.existsById(collectivityId))
                 throw new NotFoundException("Collectivity not found: " + collectivityId);
-
             if (!activityRepository.existsById(activityId))
                 throw new NotFoundException("Activity not found: " + activityId);
 
-            List<Attendance> result = new ArrayList<>();
-            for (CreateAttendanceDTO.AttendanceRecord record : dto.getRecords()) {
-                // Une fois présence marquée, on ne peut plus modifier
-                if (activityRepository.attendanceAlreadyRecorded(activityId, record.getMemberId())) {
+            // Vérifier d'abord que personne n'a déjà une présence confirmée
+            for (CreateAttendanceDTO dto : dtos) {
+                if (activityRepository.attendanceAlreadyConfirmed(
+                        activityId, dto.getMemberIdentifier())) {
                     throw new BadRequestException(
-                            "Attendance already recorded for member: " + record.getMemberId() +
-                            ". Cannot be modified.");
+                            "Attendance already confirmed for member: " +
+                            dto.getMemberIdentifier() + ". Cannot be modified.");
                 }
+            }
 
+            List<Attendance> result = new ArrayList<>();
+            for (CreateAttendanceDTO dto : dtos) {
                 activityRepository.saveAttendance(
                         activityId,
-                        record.getMemberId(),
-                        record.isPresent(),
-                        record.getExcuseReason()
+                        dto.getMemberIdentifier(),
+                        dto.getAttendanceStatus()
                 );
 
                 result.add(Attendance.builder()
-                        .memberId(record.getMemberId())
-                        .present(record.isPresent())
-                        .excuseReason(record.getExcuseReason())
+                        .memberDescription(Attendance.MemberDescription.builder()
+                                .id(dto.getMemberIdentifier())
+                                .build())
+                        .attendanceStatus(dto.getAttendanceStatus())
                         .build());
             }
             return result;
@@ -113,7 +124,6 @@ public class ActivityService {
         try {
             if (!collectivityRepository.existsById(collectivityId))
                 throw new NotFoundException("Collectivity not found: " + collectivityId);
-
             if (!activityRepository.existsById(activityId))
                 throw new NotFoundException("Activity not found: " + activityId);
 
@@ -123,11 +133,15 @@ public class ActivityService {
             List<Attendance> result = new ArrayList<>();
             for (ActivityRepository.AttendanceRecord r : records) {
                 result.add(Attendance.builder()
-                        .memberId(r.memberId())
-                        .firstName(r.firstName())
-                        .lastName(r.lastName())
-                        .present(r.present())
-                        .excuseReason(r.excuseReason())
+                        .id(r.id())
+                        .memberDescription(Attendance.MemberDescription.builder()
+                                .id(r.memberId())
+                                .firstName(r.firstName())
+                                .lastName(r.lastName())
+                                .email(r.email())
+                                .occupation(r.occupation())
+                                .build())
+                        .attendanceStatus(r.status())
                         .build());
             }
             return result;
